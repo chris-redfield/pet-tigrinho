@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#3d0a0e">
+<meta name="description" content="Um bichinho que cresce com o que você faz na vida real. Sem aposta, sem giro, sem perder nada.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Pet Tigrinho</title>
+<link rel="preload" as="image" href="assets/pet/tigrinho-0.webp">
+<link rel="stylesheet" href="src/styles/base.css">
+<link rel="stylesheet" href="src/styles/stage.css">
+<link rel="stylesheet" href="src/styles/ui.css">
+</head>
+<body>
+  <!-- Measures the real dynamic viewport so JS never has to guess. -->
+  <div id="vp-probe" aria-hidden="true"></div>
+
+  <!-- Only visible on desktop, around the framed stage. -->
+  <div id="backdrop" aria-hidden="true"></div>
+
+  <main id="stage" class="stage">
+    <div class="stage__safe">
+      <div id="screens"></div>
+    </div>
+  </main>
+
+  <div id="rotate" class="rotate" hidden>
+    <div class="rotate__inner">
+      <div class="rotate__icon" aria-hidden="true">&#8635;</div>
+      <p>Gire o celular<br><small>o jogo &eacute; na vertical</small></p>
+    </div>
+  </div>
+
+  <div id="hud" class="hud" hidden></div>
+
+  <script type="module" src="src/js/main.js"></script>
+</body>
+</html>

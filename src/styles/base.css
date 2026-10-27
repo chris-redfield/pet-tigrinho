@@ -1,0 +1,82 @@
+/* Reset + design tokens.
+
+   The palette quotes Fortune Tiger on purpose: lacquer red, imperial gold,
+   a little jade. Familiarity is the point - the player should recognise the
+   world they are coming from. It is pitched a few stops darker and less
+   saturated than the slot, which screams by design. */
+
+:root {
+  --c-red-deep: #3d0a0e;
+  --c-red:      #7d1016;
+  --c-red-lit:  #b81d22;
+  --c-gold:     #f5c242;
+  --c-gold-lit: #ffe9a8;
+  --c-gold-dim: #9c6f22;
+  --c-jade:     #2f8f6f;
+  --c-ink:      #fff6e2;
+  --c-ink-dim:  #e0bd92;
+  --c-shadow:   #1a0406;
+
+  --r-sm: calc(var(--u) * 2);
+  --r-md: calc(var(--u) * 4);
+  --r-lg: calc(var(--u) * 7);
+
+  --ease: cubic-bezier(.22, .61, .36, 1);
+  --ease-back: cubic-bezier(.34, 1.56, .64, 1);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Fixed body: no scroll, no pull-to-refresh, no rubber-banding. */
+body {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--c-red-deep);
+  color: var(--c-ink);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+img, svg { display: block; max-width: 100%; }
+
+button {
+  font: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* Gold display type with a dark cut, as used on the slot's signage. */
+.display {
+  font-weight: 800;
+  letter-spacing: .01em;
+  color: var(--c-gold-lit);
+  background: linear-gradient(180deg, #fff3cf 10%, var(--c-gold) 55%, #d79a1e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 calc(var(--u) * .4) 0 #5e2a08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

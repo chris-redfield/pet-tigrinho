@@ -1,4 +1,5 @@
 import { EGGS } from '../config.js';
+import { FORMS } from '../forms.js';
 import { chooseEgg } from '../state.js';
 import { h } from './dom.js';
 import { eggArt } from './art.js';
@@ -6,16 +7,15 @@ import { eggArt } from './art.js';
 /**
  * First-run egg pick.
  *
- * All three hatch the same pet, so this is a cosmetic choice, not a roll -
- * the player picks, they do not get drawn. When real variety lands, keep it
- * that way: show what each egg contains and let them choose. A random pull
- * from three unknowns is a loot box, which is exactly what this game exists
- * to be an alternative to.
+ * Each egg says up front which pet it hatches and its type - the player
+ * picks, they do not get drawn. A random pull from unknowns is a loot box,
+ * which is exactly what this game exists to be an alternative to.
  */
 export function renderEgg(host, onHatched) {
   let picked = null;
 
   const row = h('div', { class: 'egg-row' });
+  const detail = h('p', { class: 'egg-detail', text: 'Cada ovo choca um tigrinho diferente.' });
   const confirm = h('button', {
     class: 'btn', type: 'button', text: 'Escolha um ovo', disabled: true,
     onclick: hatch,
@@ -25,7 +25,9 @@ export function renderEgg(host, onHatched) {
     const button = h('button', {
       class: 'egg', type: 'button', 'aria-pressed': 'false',
       onclick: () => pick(egg.id),
-    }, eggArt(egg), h('span', { class: 'egg__name', text: egg.name }));
+    }, eggArt(egg),
+      h('span', { class: 'egg__name', text: egg.name }),
+      h('span', { class: 'egg__type', text: egg.type }));
     return { egg, button };
   });
   row.append(...eggs.map((e) => e.button));
@@ -34,6 +36,7 @@ export function renderEgg(host, onHatched) {
     h('h1', { class: 'egg-title display', text: 'Escolha seu ovo' }),
     h('p', { class: 'egg-sub', text: 'Seu bichinho cresce com o que você faz na vida real.' }),
     row,
+    detail,
     confirm);
 
   function pick(id) {
@@ -42,8 +45,14 @@ export function renderEgg(host, onHatched) {
     for (const { egg, button } of eggs) {
       button.setAttribute('aria-pressed', String(egg.id === id));
     }
+    const egg = EGGS.find((e) => e.id === id);
+    const base = FORMS[egg.base];
+    detail.replaceChildren(
+      h('strong', { text: `${base.name} · ${base.type}` }),
+      h('br'),
+      base.desc);
     confirm.disabled = false;
-    confirm.textContent = 'Chocar';
+    confirm.textContent = `Chocar ${base.name}`;
   }
 
   function hatch() {

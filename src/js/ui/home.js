@@ -1,13 +1,18 @@
 import { ACTIONS, ACTION_ORDER, ICONS } from '../config.js';
-import { getState, progress, remainingToday } from '../state.js';
+import { getState, progress, remainingToday, petName } from '../state.js';
 import { openSheet } from './sheet.js';
 import { showEvolution } from './evolve.js';
+import { openInfo } from './info.js';
 import { h, num } from './dom.js';
 import { iconArt } from './art.js';
 
 export function renderHome(host) {
   const stageName = h('div', { class: 'hdr__stage display' });
   const xpLabel = h('div', { class: 'hdr__xp' });
+  const infoBtn = h('button', {
+    class: 'hdr__info', type: 'button', 'aria-label': 'Informações do pet',
+    onclick: () => openInfo(screen, update),
+  }, iconArt(ICONS.info, 'hdr__info-icon'));
   const fill = h('div', { class: 'xpbar__fill' });
   const nextLabel = h('div', { class: 'xpbar__next' });
 
@@ -35,7 +40,7 @@ export function renderHome(host) {
     }));
 
   const screen = h('div', { class: 'screen' },
-    h('div', { class: 'hdr' }, stageName, xpLabel),
+    h('div', { class: 'hdr' }, stageName, xpLabel, infoBtn),
     h('div', { class: 'xpbar' }, fill),
     nextLabel,
     petStage,
@@ -43,17 +48,17 @@ export function renderHome(host) {
 
   function update() {
     const state = getState();
-    const { stage, next, into, span, ratio } = progress();
+    const { form, next, into, span, ratio } = progress();
 
-    stageName.textContent = stage.name;
+    stageName.textContent = petName();
     xpLabel.textContent = `${num(state.xp)} XP`;
-    art.src = stage.art;
-    art.style.setProperty('--pet-scale', stage.scale);
-    petStage.dataset.stage = String(state.stage);
+    art.src = form.art;
+    art.style.setProperty('--pet-scale', form.scale);
+    petStage.dataset.form = form.id;
 
     fill.style.width = `${Math.round(ratio * 100)}%`;
     nextLabel.textContent = next
-      ? `${num(into)} / ${num(span)} para ${next.name}`
+      ? `${num(into)} / ${num(span)} para evoluir (Nv. ${next})`
       : 'Evolução máxima alcançada';
 
     for (const [type, { button, rate }] of buttons) {

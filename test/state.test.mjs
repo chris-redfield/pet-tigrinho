@@ -16,7 +16,8 @@ const ok = (name, got, want) => {
 };
 
 ok('starts petless', S.hasPet(), false);
-S.chooseEgg('jade');
+S.chooseEgg('azul');
+ok('azul hatches Gotigre', S.currentForm().id, 'gotigre');
 ok('has pet after egg', S.hasPet(), true);
 
 // --- flat rates, no randomness anywhere ---
@@ -38,25 +39,80 @@ ok('nothing left today', S.remainingToday('steps'), 0);
 ok('over cap pays zero', S.logAction('steps', 5000).gained, 0);
 ok('xp after caps', S.getState().xp, 218);
 
-// --- evolution ---
-ok('218 is still stage 0', S.getState().stage, 0);
-r = S.logAction('course', 9999);                              // cap leaves 150min -> +100
-ok('course cap pays 100', r.gained, 100);
-ok('crossed 300 into stage 1', S.getState().stage, 1);
-ok('evolve event fires', r.evolved?.name, "Tigre d'Água");
+// --- level, derived from lifetime xp ---
+let lv = S.level();                                           // Nv 6 starts at 225, Nv 5 at 150
+ok('218xp is Nv 5', lv.level, 5);
+ok('xp into level', lv.into, 218 - 150);
+ok('level span', lv.span, 75);
+ok('Nv 16 starts at 1800', S.levelStart(16), 1800);
+ok('Nv 36 starts at 9450', S.levelStart(36), 9450);
 
-const p = S.progress();
-ok('next stage is Cósmico', p.next.name, 'Tigre Cósmico');
-ok('progress into stage', p.into, 318 - 300);
-ok('span to next', p.span, 1200 - 300);
+// --- status bars fill from this phase's earned xp only ---
+const st = Object.fromEntries(S.stats().map((s) => [s.id, s.value]));
+ok('wisdom = book + course xp', st.wisdom, 38 + 20);
+ok('health = steps xp', st.health, 150);
+ok('happiness = photo xp', st.happiness, 10);
+ok('capped units add nothing', S.getState().phase.steps, 150);
+ok('meal feeds fullness', (S.logAction('meal', 2), S.stats().find((s) => s.id === 'fullness').value), 20);
+ok('health pct = 150 / (.35*1800)', S.stats().find((s) => s.id === 'health').pct, 24);
 
-ok('xp never drops', S.getState().xp >= 318, true);
-ok('zero units is a no-op', S.logAction('photo', 0).gained, 0);
+// --- naming ---
+ok('unnamed pet uses form name', S.petName(), 'Gotigre');
+ok('rename trims and collapses', S.renamePet('  Mimi   do   Sol  '), 'Mimi do Sol');
+ok('rename caps length', S.renamePet('x'.repeat(40)).length, 16);
+ok('blank rename restores form name', S.renamePet('   '), 'Gotigre');
+S.renamePet('Mimi');
 
 // --- persistence ---
 const xp = S.getState().xp;
 const reloaded = await import('../src/js/state.js?fresh');
 ok('save survives reload', reloaded.getState().xp, xp);
+ok('name survives reload', reloaded.petName(), 'Mimi');
+ok('phase survives reload', reloaded.getState().phase.meal, 20);
+
+// --- branch picking (pure) ---
+const bars = (w, h, f, s) => [
+  { id: 'wisdom', raw: w }, { id: 'happiness', raw: h }, { id: 'fullness', raw: f }, { id: 'health', raw: s },
+];
+ok('only Coraliger met', S.pickBranch('gotigre', bars(10, 95, 0, 10)).form.id, 'coraliger');
+ok('Neviger met', S.pickBranch('gotigre', bars(75, 0, 0, 85)).form.id, 'neviger');
+ok('harder Toxitigre beats Neviger', S.pickBranch('gotigre', bars(96, 0, 0, 91)).form.id, 'toxitigre');
+ok('none met -> closest', S.pickBranch('gotigre', bars(60, 50, 0, 79)).form.id, 'neviger');
+ok('Sombriger needs food + wisdom', S.pickBranch('tigrin', bars(81, 10, 91, 0)).form.id, 'sombriger');
+ok('Vulcaniger needs fullness 95', S.pickBranch('brasinha', bars(0, 0, 96, 0)).form.id, 'vulcaniger');
+ok('Espinhiger beats Troncotigre', S.pickBranch('folhiger', bars(86, 0, 81, 96)).form.id, 'espinhiger');
+ok('Palatigre needs health 100', S.pickBranch('tigreluz', bars(95, 99, 0, 100)).form.id, 'palatigre');
+ok('Nv36 by highest stat', S.pickBranch('mentetigre', bars(40, 90, 10, 20)).form.id, 'ilusioniger');
+ok('Nv36 favors either stat', S.pickBranch('mentetigre', bars(40, 10, 95, 20)).form.id, 'tigre-mestre');
+ok('final forms have no branch', S.pickBranch('palatigre', bars(0, 0, 0, 0)), null);
+
+// --- evolving end to end: azul egg, focused on wisdom + health ---
+S.resetSave();
+S.chooseEgg('azul');
+const newDay = () => { S.getState().daily = { date: 'yesterday' }; };
+for (let day = 0; day < 4; day++) {
+  newDay();
+  S.logAction('book', 100);                                   // +150
+  S.logAction('course', 180);                                 // +120
+  S.logAction('steps', 15000);                                // +150
+}
+ok('1680xp is still Gotigre', S.currentForm().id, 'gotigre');
+ok('prediction is Toxitigre', S.nextBranch().form.id, 'toxitigre');
+newDay();
+r = S.logAction('book', 100);
+ok('crossing Nv 16 evolves', r.evolved?.id, 'toxitigre');
+ok('evolved form is Raro', S.currentForm().rarity, 'raro');
+ok('phase restarts', S.stats().every((s) => s.value === 0), true);
+ok('next evolution is Nv 36', S.progress().next, 36);
+ok('xp never drops', S.getState().xp, 1830);
+
+// --- v1 saves migrate ---
+store.set('pet-tigrinho:save', JSON.stringify({ version: 1, pet: { egg: 'jade', name: 'Rex' }, xp: 500, stage: 1,
+  totals: { photo: 1, steps: 2000, book: 0, course: 0 }, daily: { date: 'x' }, log: [] }));
+const migrated = await import('../src/js/state.js?v1');
+ok('v1 becomes Tigrin', migrated.currentForm().id, 'tigrin');
+ok('v1 keeps xp and name', [migrated.getState().xp, migrated.petName()], [500, 'Rex']);
+ok('v1 gains meal totals', migrated.getState().totals.meal, 0);
 
 console.log(failed ? `\n${failed} failing` : '\nall green');
 process.exit(failed ? 1 : 0);

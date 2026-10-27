@@ -26,10 +26,13 @@ machine. The game must not re-train it.
   recorded, it just stops paying. The game should say *that's enough for
   today* rather than reward a six-hour binge — compulsion transfer is a real
   risk with this audience.
-- **The egg pick is a choice, not a draw.** All three eggs hatch the same pet
-  today. When real variety lands, show what each egg contains and let the
-  player choose. Three unknowns and a random pull is a loot box, which is the
-  thing this game exists to be an alternative to.
+- **The egg pick is a choice, not a draw.** Each egg shows its type and the
+  pet it hatches before the player commits. Unknowns plus a random pull is a
+  loot box, which is the thing this game exists to be an alternative to.
+- **Evolution branches are a choice too.** Which form the pet becomes is set
+  by the status bars, by a published rule, and the info screen shows live
+  which form it would take right now. Every branch asks for *high* stats —
+  there is no path that rewards or depends on neglect.
 
 ### On the Fortune Tiger look
 
@@ -47,27 +50,51 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
 
 ## The loop
 
-1. **First run** — pick one of three eggs, hatch it.
-2. **Log real-world actions** — four of them, each a flat XP rate:
+1. **First run** — pick one of four eggs, each showing what it hatches:
+   Branco → Tigrin (Normal), Vermelho → Brasinha (Fogo),
+   Azul → Gotigre (Água), Verde → Folhiger (Grama).
+2. **Log real-world actions** — five of them, each a flat XP rate:
 
-   | Action  | Rate              | Daily cap   |
-   |---------|-------------------|-------------|
-   | Foto    | +10 XP / photo    | 5 photos    |
-   | Passos  | +10 XP / 1.000    | 15.000      |
-   | Leitura | +15 XP / 10 pages | 100 pages   |
-   | Estudo  | +20 XP / 30 min   | 180 min     |
+   | Action   | Rate              | Daily cap   | Feeds      |
+   |----------|-------------------|-------------|------------|
+   | Foto     | +10 XP / photo    | 5 photos    | Felicidade |
+   | Passos   | +10 XP / 1.000    | 15.000      | Saúde      |
+   | Leitura  | +15 XP / 10 pages | 100 pages   | Sabedoria  |
+   | Estudo   | +20 XP / 30 min   | 180 min     | Sabedoria  |
+   | Refeição | +10 XP / meal     | 4 meals     | Saciedade  |
 
-3. **Evolve** — a three-stage line, Pokémon style:
+3. **Level** — going from Nv L to L+1 costs `L × LEVEL_STEP` (15) XP, so
+   Nv 16 is at 1.800 XP and Nv 36 at 9.450. A normal day lands near 150 XP
+   and a maxed one ~510, so the first evolution is about two weeks in and
+   the second about two months.
+4. **Evolve** — two branching evolutions, Pokémon style. The full tree
+   (52 forms) is data in `src/js/forms.js`:
 
-   | Stage | Name          | At      |
-   |-------|---------------|---------|
-   | 0     | Tigrinho      | 0 XP    |
-   | 1     | Tigre d'Água  | 300 XP  |
-   | 2     | Tigre Cósmico | 1200 XP |
+   - **Nv 16** — the base form becomes one of three Raro forms, each with
+     stat requirements (e.g. Gotigre → Coraliger: Felicidade ≥ 90%).
+   - **Nv 36** — each Raro form becomes one Lendário or two Épico forms.
+     The Tigreluz line has requirements; the rest go to the form whose
+     favoured stat is highest.
 
-   A maxed-out day is ~470 XP and a normal one lands near 150, so Água is a
-   few days in and Cósmico a week or two. Slow enough to be a habit, fast
-   enough to feel alive.
+   Rule (`pickBranch` in `src/js/state.js`): of the branches whose
+   requirements are met, the most demanding wins; if none is met, the one
+   it came closest to wins; ties go to the first listed.
+
+5. **Status bars** measure the current *phase* (since the last evolution):
+   XP earned from the bar's source actions as a share of `share × phase
+   span`. Inside a phase they only fill — no hunger timer, no decay, no red
+   low state. Evolving starts a new phase and they start over, like the XP
+   bar does. The shares add up to more than 1, so you cannot max every bar
+   in one phase: what you focus on picks the branch.
+6. **Pet info** — the ⓘ button opens name (tap to rename), level, type,
+   rarity, the status bars and the next-evolution preview. Rarity is earned
+   by evolving, never drawn. **Enciclopédia** is shown but locked until it
+   is built.
+
+Only Tigrin has art so far; every form borrows `tigrinho-0.webp` until its
+own sprite lands (set `art`/`scale` per form in `forms.js`). The old
+`tigrinho-1`/`tigrinho-2` sprites are unused for now. v1 saves migrate to a
+Tigrin that keeps its XP, totals and name.
 
 All tuning lives in `src/js/config.js`.
 
@@ -90,8 +117,8 @@ Plain HTML5 + CSS + JS, ES modules, no build step, no dependencies.
 ```
 index.html
 src/styles/   base (reset + tokens) · stage (viewport) · ui (screens)
-src/js/       config · state · viewport · main
-src/js/ui/    dom · art · egg · home · sheet · evolve
+src/js/       config · forms · state · viewport · main
+src/js/ui/    dom · art · egg · home · sheet · evolve · info
 assets/pet/   stage sprites, 900px WebP
 assets/source/ original artwork, untouched
 test/         node test/state.test.mjs

@@ -64,8 +64,8 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    eggs fade in place and the hatch is a soft bloom. Without WebGL the
    flat SVG eggs are used.
 2. **Log real-world actions** — five of them, each a flat XP rate. On the
-   home screen they live behind one *Tarefas* icon on the left, which
-   unfolds into the five buttons:
+   home screen they sit in a row under the centred pet, always in view:
+   five round icon buttons without panels, each showing its XP:
 
    | Action   | Rate              | Daily cap   | Feeds      |
    |----------|-------------------|-------------|------------|
@@ -158,7 +158,8 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    nothing is phrased as being behind. `state.js` keeps a per-day history
    (`history`, 400 days) for the week column; the lifetime column comes
    from the totals every save has carried since v1.
-9. **Trilhas** — the closed fist in the lower right. One short mission per
+9. **Trilhas** — the closed fist in the footer tab bar, with a badge for
+   how much of today's trilha is done. One short mission per
    day, on a Duolingo-shaped path: *Dia 1*, *Dia 2*, … Each day asks for a
    few of the same five actions and carries one small thing worth knowing.
    The tasks tick themselves off from what was logged today — here or on

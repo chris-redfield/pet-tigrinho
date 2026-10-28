@@ -1,15 +1,15 @@
 import { ACTIONS, ACTION_ORDER, ICONS } from '../config.js';
-import { getState, progress, remainingToday, doneToday, petName, level, canEvolve, evolve, devLevelUp, trilhaToday, currentForm } from '../state.js';
+import { getState, progress, remainingToday, doneToday, petName, level, canEvolve, evolve, devLevelUp, currentForm } from '../state.js';
 import { openSheet } from './sheet.js';
 import { showEvolution } from './evolve.js';
 import { openInfo } from './info.js';
 import { openAchievements } from './achievements.js';
-import { openTrilhas } from './trilhas.js';
 import { h, num } from './dom.js';
 import { iconArt, actionIcon } from './art.js';
 import { toast } from './toast.js';
 import { hearts, say, celebrateGain } from './petfx.js';
 import { createChatter } from '../chatter.js';
+import { refreshTrilhaBadge } from './tabbar.js';
 
 export function renderHome(host) {
   const stageName = h('div', { class: 'hdr__stage display' });
@@ -48,54 +48,27 @@ export function renderHome(host) {
     art,
     sparks);
 
-  // Square icon buttons in a column beside the pet, folded behind one icon
-  // so the pet gets the screen until the player asks for them. The name
+  // The five actions in a row under the pet, always in view: round icon
+  // buttons without frames, so they sit lightly on the scene. The name
   // lives in the aria-label; the XP stays on the face of every button,
   // because the player must always see what an action pays before acting.
   const buttons = new Map();
-  const list = h('div', { class: 'actions__list', id: 'actions-list' },
-    ACTION_ORDER.map((type, i) => {
+  const actions = h('nav', { class: 'actions', 'aria-label': 'Registrar atividade' },
+    ACTION_ORDER.map((type) => {
       const rate = h('div', { class: 'act__rate' });
       const button = h('button', {
-        class: 'act panel', type: 'button', style: `--i:${i}`,
+        class: 'act', type: 'button',
         onclick: () => openSheet(screen, type, onLogged),
-      }, actionIcon(type, 'act__icon'), rate);
+      }, h('span', { class: 'act__disc' }, actionIcon(type, 'act__icon')), rate);
       buttons.set(type, { button, rate });
       return button;
     }));
-
-  const toggle = h('button', {
-    class: 'actions__toggle panel', type: 'button', 'aria-expanded': 'false',
-    'aria-controls': 'actions-list',
-    onclick: () => setOpen(actions.dataset.open !== 'true'),
-  },
-    iconArt(ICONS.plus, 'actions__toggle-icon'),
-    h('span', { class: 'actions__toggle-label', text: 'Tarefas' }));
-
-  const actions = h('nav', { class: 'actions', 'aria-label': 'Registrar atividade',
-    dataset: { open: 'false' } }, toggle, list);
-
-  function setOpen(open) {
-    actions.dataset.open = String(open);
-    toggle.setAttribute('aria-expanded', String(open));
-    toggle.setAttribute('aria-label', open ? 'Fechar as tarefas' : 'Abrir as tarefas');
-  }
 
   // Dev only: ?dev in the URL shows a button that jumps one level.
   const devBtn = new URLSearchParams(location.search).has('dev') && h('button', {
     class: 'dev-lvl', type: 'button',
     onclick: () => onLogged(devLevelUp()),
   });
-
-  // Lower right: the way into the trilhas, a closed hand facing forward.
-  const trilhaBadge = h('span', { class: 'fab__badge' });
-  const trilhaBtn = h('button', {
-    class: 'fab', type: 'button', 'aria-label': 'Trilhas',
-    onclick: () => openTrilhas(screen, { onChange: update, onClose: update }),
-  },
-    iconArt(ICONS.fist, 'fab__icon'),
-    trilhaBadge,
-    h('span', { class: 'fab__label', text: 'Trilhas' }));
 
   const screen = h('div', { class: 'screen' },
     h('div', { class: 'hdr' },
@@ -104,8 +77,7 @@ export function renderHome(host) {
       h('div', { class: 'hdr__right' }, xpLabel, infoBtn)),
     bar,
     nextLabel,
-    h('div', { class: 'home-body' }, actions, petStage),
-    trilhaBtn,
+    h('div', { class: 'home-body' }, petStage, actions),
     devBtn);
 
   function update() {
@@ -132,13 +104,7 @@ export function renderHome(host) {
         ? `${num(into)} / ${num(span)} para evoluir (Nv. ${next})`
         : 'Evolução máxima alcançada';
 
-    const trilha = trilhaToday();
-    const ticked = trilha.tasks.filter((task) => task.done).length;
-    trilhaBadge.textContent = trilha.waiting ? '✓' : `${ticked}/${trilha.tasks.length}`;
-    trilhaBadge.dataset.done = String(trilha.waiting || trilha.ready);
-    trilhaBtn.setAttribute('aria-label', trilha.waiting
-      ? `Trilhas: Dia ${trilha.day - 1} concluído`
-      : `Trilhas: Dia ${trilha.day}, ${ticked} de ${trilha.tasks.length} tarefas`);
+    refreshTrilhaBadge();
 
     for (const [type, { button, rate }] of buttons) {
       const cfg = ACTIONS[type];

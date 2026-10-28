@@ -207,114 +207,68 @@
   50%      { transform: scale(1.06); opacity: 1; }
 }
 
-/* ---------- home body: action column + pet ---------- */
+/* ---------- home body: pet + action arc ---------- */
 
 .home-body {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
-  align-items: stretch;
-  gap: calc(var(--u) * 2);
-  padding: calc(var(--u) * 3) calc(var(--u) * 4) calc(var(--u) * 5);
+  flex-direction: column;
+  padding: calc(var(--u) * 2) calc(var(--u) * 4) calc(var(--u) * 4);
 }
+/* The pet takes the whole width, so it sits in the middle of the screen. */
 .home-body .pet-stage { flex: 1 1 auto; min-width: 0; }
 
-/* Square icon buttons, one per action, folded behind one icon down the left
-   side. Collapsed the column is a single "Tarefas" tile; open it is that
-   tile shrunk to a close button with the five actions dealt out under it. */
+/* The five actions in a straight row under the pet. Round discs without
+   panels, so the row reads as part of the scene. */
 .actions {
-  position: relative;
-  z-index: 2;
   flex: 0 0 auto;
   display: flex;
-  flex-direction: column;
   justify-content: center;
-  align-items: flex-start;
-  gap: calc(var(--u) * 2.4);
+  gap: calc(var(--u) * 1.6);
 }
-.actions__list {
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--u) * 2.4);
-}
-.actions[data-open="false"] .actions__list { display: none; }
-
-.actions__toggle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: calc(var(--u) * .6);
-  width: calc(var(--u) * 18);
-  aspect-ratio: 1;
-  padding: calc(var(--u) * 1.6);
-  transition: width .2s var(--ease), border-radius .2s var(--ease), transform .12s var(--ease);
-}
-.actions__toggle:active { transform: translateY(var(--press)); box-shadow: 0 0 0 var(--red-950); }
-.actions__toggle-icon {
-  width: calc(var(--u) * 8);
-  height: calc(var(--u) * 8);
-  fill: var(--c-gold);
-  transition: rotate .24s var(--ease);
-}
-.actions__toggle-label {
-  font-size: calc(var(--u) * 2.7);
-  font-weight: 700;
-  line-height: 1;
-  color: var(--c-gold);
-}
-/* Open: the tile becomes a round close button - the plus turned 45 degrees. */
-.actions[data-open="true"] .actions__toggle {
-  width: calc(var(--u) * 11);
-  border-radius: 50%;
-}
-.actions[data-open="true"] .actions__toggle-icon {
-  width: calc(var(--u) * 5.4);
-  height: calc(var(--u) * 5.4);
-  rotate: 45deg;
-}
-.actions[data-open="true"] .actions__toggle-label { display: none; }
-
-/* Dealt out one after another. `backwards`, not `both`, so the finished
-   animation does not hold the transform and swallow the :active press. */
-.actions[data-open="true"] .act {
-  width: calc(var(--u) * 16);
-  animation: act-in .26s var(--ease-back) backwards;
-  animation-delay: calc(var(--i) * .045s);
-}
-@keyframes act-in {
-  from { opacity: 0; transform: translateX(calc(var(--u) * -5)) scale(.8); }
-}
-
 .act {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: calc(var(--u) * .6);
-  width: calc(var(--u) * 18);
+  gap: calc(var(--u) * .9);
+  width: calc(var(--u) * 12);
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.act__disc {
+  display: grid;
+  place-items: center;
+  width: calc(var(--u) * 12);
   aspect-ratio: 1;
-  padding: calc(var(--u) * 1.6);
+  border-radius: 50%;
+  border: calc(var(--u) * .4) solid #f5c24273;
+  background: radial-gradient(circle at 50% 35%, #8a1a2499 0%, #2a0609b3 100%);
+  box-shadow: 0 calc(var(--u) * .8) 0 #2a060999;
   transition: transform .1s var(--ease), box-shadow .1s var(--ease);
 }
-.act:active { transform: translateY(var(--press)); box-shadow: 0 0 0 var(--red-950); }
+.act:active .act__disc { transform: translateY(calc(var(--u) * .8)); box-shadow: 0 0 0 #2a060999; }
 .act__icon {
   flex: 0 0 auto;
-  width: calc(var(--u) * 9);
-  height: calc(var(--u) * 9);
+  width: calc(var(--u) * 6.4);
+  height: calc(var(--u) * 6.4);
   fill: var(--c-gold);
 }
-.act__icon--art { width: calc(var(--u) * 11); height: calc(var(--u) * 11); object-fit: contain; }
+.act__icon--art { width: calc(var(--u) * 8.4); height: calc(var(--u) * 8.4); object-fit: contain; }
 .act__rate {
-  font-size: calc(var(--u) * 2.7);
-  font-weight: 700;
+  font-size: calc(var(--u) * 2.5);
+  font-weight: 800;
   line-height: 1;
   color: var(--c-gold);
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 calc(var(--u) * .3) 0 #2a0609;
 }
-.act[data-done="true"] { filter: saturate(.35) brightness(.78); }
+/* Done for today: the disc calms down, the label says so. Never hidden. */
+.act[data-done="true"] .act__disc { filter: saturate(.35) brightness(.75); border-color: #f5c24233; }
 .act[data-done="true"] .act__rate { color: var(--c-ink-dim); }
+
 
 /* ---------- egg screen ---------- */
 
@@ -989,6 +943,27 @@
   transition: background .15s var(--ease), border-color .15s var(--ease);
 }
 .tab__icon { width: calc(var(--u) * 6.4); height: calc(var(--u) * 6.4); fill: currentColor; }
+.tab__iconwrap { position: relative; display: grid; }
+/* How much of today's trilha is done, on the Trilhas tab. */
+.tab__badge {
+  position: absolute;
+  top: calc(var(--u) * -1.2);
+  right: calc(var(--u) * -3.2);
+  display: grid;
+  place-items: center;
+  min-width: calc(var(--u) * 4.2);
+  height: calc(var(--u) * 3.8);
+  padding: 0 calc(var(--u) * .8);
+  border-radius: 999px;
+  border: calc(var(--u) * .3) solid var(--red-950);
+  background: var(--red-700);
+  color: var(--c-gold-lit);
+  font-size: calc(var(--u) * 2);
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.tab__badge[data-done="true"] { background: var(--c-jade); color: var(--jade-100); }
 .tab__icon path { fill-rule: evenodd; }
 .tab__label { font-size: calc(var(--u) * 2.7); font-weight: 900; letter-spacing: .06em; text-transform: uppercase; }
 .tab[aria-current="page"] { color: var(--gold-500); border-color: var(--gold-500); background: #f5c2421f; }
@@ -1211,62 +1186,6 @@
   box-shadow: 0 0 0 var(--red-950);
 }
 .hdr__crown-icon { width: calc(var(--u) * 6.2); height: calc(var(--u) * 6.2); fill: var(--c-gold); }
-
-/* ---------- trilhas button (home, lower right) ---------- */
-
-.fab {
-  position: absolute;
-  right: calc(var(--u) * 5);
-  bottom: calc(var(--u) * 9);
-  z-index: 4;
-  display: grid;
-  place-items: center;
-  width: calc(var(--u) * 8.5);
-  height: calc(var(--u) * 8.5);
-  border-radius: 50%;
-  border: calc(var(--u) * .35) solid var(--gold-700);
-  background: var(--gold-500);
-  box-shadow:
-    0 calc(var(--u) * .5) 0 var(--gold-700),
-    0 calc(var(--u) * .8) calc(var(--u) * 1.5) #2a060966;
-  transition: transform .12s var(--ease), box-shadow .12s var(--ease);
-}
-.fab:active {
-  transform: translateY(calc(var(--u) * .5));
-  box-shadow: 0 0 0 var(--gold-700);
-}
-.fab__icon { width: calc(var(--u) * 4.7); height: calc(var(--u) * 4.7); fill: var(--gold-ink); }
-.fab__label {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translate(-50%, calc(var(--u) * .5));
-  font-size: calc(var(--u) * 1.8);
-  font-weight: 800;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-  color: var(--c-gold-lit);
-  white-space: nowrap;
-}
-/* How much of today's trilha is done, so the button says something. */
-.fab__badge {
-  position: absolute;
-  top: calc(var(--u) * -1.1);
-  right: calc(var(--u) * -1.1);
-  display: grid;
-  place-items: center;
-  min-width: calc(var(--u) * 3.6);
-  height: calc(var(--u) * 3.6);
-  padding: 0 calc(var(--u) * .7);
-  border-radius: 999px;
-  border: calc(var(--u) * .3) solid var(--red-950);
-  background: var(--red-700);
-  color: var(--c-gold-lit);
-  font-size: calc(var(--u) * 1.7);
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-.fab__badge[data-done="true"] { background: var(--c-jade); color: var(--jade-100); }
 
 /* ---------- conquistas screen ---------- */
 

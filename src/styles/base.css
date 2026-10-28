@@ -3,19 +3,60 @@
    The palette quotes Fortune Tiger on purpose: lacquer red, imperial gold,
    a little jade. Familiarity is the point - the player should recognise the
    world they are coming from. It is pitched a few stops darker and less
-   saturated than the slot, which screams by design. */
+   saturated than the slot, which screams by design.
+
+   The shapes follow a chunky, flat, friendly game-UI language: solid fills
+   (no gradients on controls), thick rounded edges, and a solid "ledge" under
+   every pressable thing that it sinks into when tapped. The colours stay the
+   Tigrinho ones, organised as three tonal scales so every surface, edge and
+   ledge is a step of the same hue instead of a one-off hex. */
 
 :root {
-  --c-red-deep: #3d0a0e;
-  --c-red:      #7d1016;
-  --c-red-lit:  #b81d22;
-  --c-gold:     #f5c242;
-  --c-gold-lit: #ffe9a8;
-  --c-gold-dim: #9c6f22;
-  --c-jade:     #2f8f6f;
+  /* Lacquer red: background -> wells -> cards -> raised. */
+  --red-950: #2a0609;   /* ledges under red surfaces, deepest shadow */
+  --red-900: #3b080c;   /* wells: bar tracks, inputs */
+  --red-850: #3d0a0e;   /* page */
+  --red-800: #4e0b10;   /* secondary surfaces, chips */
+  --red-700: #5e0d12;   /* cards */
+  --red-600: #7d1016;   /* card edges, pressed surfaces */
+  --red-500: #b81d22;   /* lit accent */
+
+  /* Imperial gold: the one action colour. */
+  --gold-700: #7a5212;  /* ledge under gold buttons */
+  --gold-600: #9c6f22;  /* gold edges on red */
+  --gold-500: #f5c242;  /* fills, active state */
+  --gold-300: #ffe9a8;  /* highlights, titles */
+  --gold-ink: #4a2403;  /* text on gold (contrast 9:1) */
+
+  /* Jade: calm, success, "met". */
+  --jade-800: #143329;
+  --jade-700: #1d5c47;
+  --jade-500: #2f8f6f;
+  --jade-300: #5cc7a2;
+  --jade-200: #a6ecd0;
+  --jade-100: #d6f5e4;
+
+  /* Older names, kept so existing rules read the same scale. */
+  --c-red-deep: var(--red-850);
+  --c-red:      var(--red-600);
+  --c-red-lit:  var(--red-500);
+  --c-gold:     var(--gold-500);
+  --c-gold-lit: var(--gold-300);
+  --c-gold-dim: var(--gold-600);
+  --c-jade:     var(--jade-500);
   --c-ink:      #fff6e2;
   --c-ink-dim:  #e0bd92;
   --c-shadow:   #1a0406;
+
+  /* Depth of the ledge under pressable things; :active sinks by this much.
+     Measured on duolingo.com at 390px: primary buttons sit on a 4px solid
+     ledge (1u), secondary ones have a 2px edge and a 2px ledge (.5u). */
+  --press: calc(var(--u) * 1);
+  --edge: calc(var(--u) * .5);
+  /* Corner radius of controls (buttons, chips, inputs): 12px at 390px. */
+  --r-ctl: calc(var(--u) * 3.1);
+
+  --font: "Nunito", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 
   --r-sm: calc(var(--u) * 2);
   --r-md: calc(var(--u) * 4);
@@ -41,7 +82,8 @@ body {
   overscroll-behavior: none;
   background: var(--c-red-deep);
   color: var(--c-ink);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font);
+  font-weight: 600;
   font-synthesis-weight: none;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -61,20 +103,22 @@ button {
   touch-action: manipulation;
 }
 
-/* Gold display type with a dark cut, as used on the slot's signage. */
+/* Titles: heavy rounded type in flat gold. */
 .display {
-  font-weight: 800;
-  letter-spacing: .01em;
-  color: var(--c-gold-lit);
-  background: linear-gradient(180deg, #fff3cf 10%, var(--c-gold) 55%, #d79a1e 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 calc(var(--u) * .4) 0 #5e2a08);
+  font-weight: 900;
+  letter-spacing: -.01em;
+  color: var(--gold-500);
 }
 
+/* Keyboard focus is always visible (touch taps do not trigger it). */
+:focus-visible {
+  outline: calc(var(--u) * .8) solid var(--gold-300);
+  outline-offset: calc(var(--u) * .6);
+}
+input, textarea { font-family: inherit; }
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  :root:not(.motion-full) *, :root:not(.motion-full) *::before, :root:not(.motion-full) *::after {
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: .01ms !important;

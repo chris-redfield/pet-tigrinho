@@ -91,7 +91,7 @@ body[data-mode="framed"] #backdrop { opacity: 1; }
    drifting toward the bottom-left at half speed instead: still reads as a
    slide (~6px/s on a phone), calm enough not to pull the eye. */
 @media (prefers-reduced-motion: reduce) {
-  .stage::before {
+  :root:not(.motion-full) .stage::before {
     animation-duration: 8s !important;
     animation-iteration-count: infinite !important;
   }

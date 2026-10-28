@@ -26,9 +26,11 @@ machine. The game must not re-train it.
   recorded, it just stops paying. The game should say *that's enough for
   today* rather than reward a six-hour binge — compulsion transfer is a real
   risk with this audience.
-- **The egg pick is a choice, not a draw.** Each egg shows its type and the
-  pet it hatches before the player commits. Unknowns plus a random pull is a
-  loot box, which is the thing this game exists to be an alternative to.
+- **The egg pick is a choice, not a draw.** Each egg always hatches the same
+  pet, and its colour shows its type (Branco Normal, Vermelho Fogo, Azul
+  Água, Verde Grama). Nothing is rolled: the same egg gives the same pet
+  every time. A random pull is a loot box, which is the thing this game
+  exists to be an alternative to.
 - **Evolution branches are a choice too.** Which form the pet becomes is set
   by the status bars, by a published rule, and the info screen shows live
   which form it would take right now. Every branch asks for *high* stats —
@@ -50,12 +52,20 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
 
 ## The loop
 
-1. **First run** — pick one of four eggs, each showing what it hatches:
+1. **First run** — pick one of four eggs. Each always hatches the same pet:
    Branco → Tigrin (Normal), Vermelho → Brasinha (Fogo),
    Azul → Tigre d'Água (Água), Verde → Folhiger (Grama).
+   The eggs are 3D (`src/js/ui/eggs3d.js`, built in code, no model files):
+   they drop one after another onto a 2x2 grid with two soft bounces,
+   sit on a soft shadow and spin on their axis with an idle wiggle. The
+   first tap hatches one: it shakes, bursts into shell pieces with a flash
+   and the pet pops out. The screen shows only the title; what each egg
+   hatches is in its button label for screen readers. Reduced motion: the
+   eggs fade in place and the hatch is a soft bloom. Without WebGL the
+   flat SVG eggs are used.
 2. **Log real-world actions** — five of them, each a flat XP rate. On the
-   home screen they live behind one *Tarefas* icon on the left, which
-   unfolds into the five buttons:
+   home screen they sit in a row under the centred pet, always in view:
+   five round icon buttons without panels, each showing its XP:
 
    | Action   | Rate              | Daily cap   | Feeds      |
    |----------|-------------------|-------------|------------|
@@ -89,12 +99,16 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    on, not the harder route); if neither is met, the closest wins. Ties go
    to the first listed.
 
-   Reaching the level does not evolve the pet by itself: a glow in its
-   line's colour (`aura` in `forms.js`) hugs it, small stars rise around
-   it, and the home screen says *Toque no tigrinho para evoluir*. Other
-   looks can be compared side by side in `dev/aura-lab.html`. The player
-   taps the pet when they want; the branch is decided at that tap. Nothing
-   pushes them to — the pet waits, and XP keeps counting meanwhile.
+   Reaching the level evolves the pet by itself (`autoEvolve` in
+   `src/js/ui/home.js`): after a short pause that lets the XP bar finish
+   filling, the branch is decided by the rule above and the reveal plays.
+   The reveal is rich but not a payout: the old form alternates with a
+   white silhouette (at most ~2 times a second, under the WCAG 2.3.1
+   limit of 3), one soft bloom swaps in the new form, light rays turn
+   slowly and a ring of stars drifts out once. No coin shower, strobe,
+   jingle or counter. The info screen shows the branch in advance, so the
+   outcome is never a surprise draw. Glow looks can still be compared in
+   `dev/aura-lab.html`.
 
 5. **Status bars** measure the current *phase* (since the last evolution):
    XP earned from the bar's source actions as a share of `share × phase
@@ -102,11 +116,41 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    low state. Evolving starts a new phase and they start over, like the XP
    bar does. The shares add up to more than 1, so you cannot max every bar
    in one phase: what you focus on picks the branch where there is one.
-6. **Pet info** — the ⓘ button opens name (tap to rename), level, type,
+6. **Pet reactions** — tapping the pet pets it: it sinks under the hand,
+   leans toward the tap, wiggles and glows warm for a moment (under
+   reduced motion, a small squeeze and the glow only). Each tap also
+   sends up one heart in one of three sizes and sometimes a speech bubble
+   (`src/js/chatter.js`).
+   While the home screen is open the pet speaks now and then: first after
+   25 s, then every 90-150 s, at most 4 times per visit, mostly a gentle
+   invitation to an action not done today, and *rest* once every action is
+   capped. Never guilt, never hunger. A tap pays nothing, so the random
+   choice of hearts and words is not a draw.
+
+   An action that pays XP gets a celebration (`src/js/ui/petfx.js`): the
+   pet hops, the fixed `+N XP` the button already showed rises from it,
+   golden orbs fly into the XP bar and the bar answers with a glow, a
+   bounce and a shine. No number counts up. Under reduced motion only the
+   static parts remain.
+
+7. **Pet info** — the ⓘ button opens name (tap to rename), level, type,
    rarity, the status bars and the next-evolution preview. Rarity is earned
-   by evolving, never drawn. **Enciclopédia** is shown but locked until it
-   is built.
-7. **Conquistas** — the crown in the middle of the home header. Everything
+   by evolving, never drawn. The preview shows the form the pet is heading
+   for as a black silhouette until it has been discovered; its name and
+   rule stay visible, so the branch is still never a surprise.
+
+   **Enciclopédia** (`src/js/ui/encyclopedia.js`) lists every form, one line
+   per egg. Forms the player has had (`seen` in the save) show art, name,
+   type and description; the rest are a nameless silhouette. A form is
+   discovered only by raising a pet into it — nothing is bought or rolled.
+
+   **Novo ovo** stays locked until the pet reaches its final form (Nv 36).
+   Then the player may retire it and pick any egg again (still a choice,
+   not a draw). The new pet starts at Nv 1; totals, history, trilhas,
+   medals and the encyclopedia carry over, the retired pet is kept in
+   `retired`, and its XP still counts in the lifetime total. Choosing a new
+   egg is optional and never prompted.
+8. **Conquistas** — the crown in the middle of the home header. Everything
    the player has done, as **Sempre** or **Esta semana** (segunda a
    domingo, `WEEK_STARTS_ON` in `config.js`): XP, active days, trilhas,
    units per action, plus the medals in `src/js/medals.js`. It is a record,
@@ -114,7 +158,8 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    nothing is phrased as being behind. `state.js` keeps a per-day history
    (`history`, 400 days) for the week column; the lifetime column comes
    from the totals every save has carried since v1.
-8. **Trilhas** — the closed fist in the lower right. One short mission per
+9. **Trilhas** — the closed fist in the footer tab bar, with a badge for
+   how much of today's trilha is done. One short mission per
    day, on a Duolingo-shaped path: *Dia 1*, *Dia 2*, … Each day asks for a
    few of the same five actions and carries one small thing worth knowing.
    The tasks tick themselves off from what was logged today — here or on
@@ -152,15 +197,17 @@ All tuning lives in `src/js/config.js`.
 
 ## Stack
 
-Plain HTML5 + CSS + JS, ES modules, no build step, no dependencies.
+Plain HTML5 + CSS + JS, ES modules, no build step. One vendored library:
+three.js 0.160 (`src/vendor/`, MIT), loaded only by the egg screen.
 
 ```
 index.html
 src/styles/   base (reset + tokens) · stage (viewport) · ui (screens)
 src/js/       config · forms · trilhas · medals · sprites · state
               viewport · pedometer · main
-src/js/ui/    dom · art · toast · egg · home · sheet · evolve · info
-              achievements · trilhas · finance · help · tabbar
+src/js/ui/    dom · art · toast · egg · eggs3d · home · sheet · evolve · info
+              encyclopedia · achievements · trilhas · finance · help · tabbar
+src/vendor/   three.module.min.js (three.js 0.160, MIT)
 assets/pet/   form sprites, <id>.webp, 900px
 assets/icons/ action button icons, <action>.webp, 256px
 assets/source/ original artwork, <id>.png, untouched
@@ -213,7 +260,9 @@ the chat. Setup, key safety and deploy options: `docs/gemini.md`.
 Then <http://localhost:8000>. Query flags: `?debug=1` for a viewport HUD,
 `?reset=1` to wipe the save, `?dev=1` for a dev button on the home screen
 that grants exactly the XP to the next level (it feeds no status bar, so
-log real actions first to steer the Azul branch).
+log real actions first to steer the Azul branch), `?motion` for the full
+effects on a machine with the system's reduce motion on (egg drop,
+evolution charge, petting wiggle - see `src/js/motion.js`).
 
 ```sh
 node test/state.test.mjs

@@ -5,6 +5,8 @@ import { renderHome } from './ui/home.js';
 import { renderFinance } from './ui/finance.js';
 import { renderTabbar } from './ui/tabbar.js';
 import { renderHelp } from './ui/help.js';
+import { openTrilhas } from './ui/trilhas.js';
+import { forceMotion } from './motion.js';
 
 /** Kills the browser gestures that break a fullscreen game. */
 function lockGestures() {
@@ -44,7 +46,20 @@ function initDebugHud() {
 
 const screens = () => document.getElementById('screens');
 
-const TABS = { pet: renderHome, financas: renderFinance, ajuda: renderHelp };
+/**
+ * Trilhas is a tab, but its screen is an overlay on the home screen: the
+ * home underneath reacts to the XP a trilha pays (bar, evolution), and
+ * closing the trilhas goes back to the Pet tab.
+ */
+function renderTrilhasTab(host) {
+  const home = renderHome(host);
+  openTrilhas(host, {
+    onChange: home.update,
+    onClose: () => { tab = 'pet'; route(); },
+  });
+}
+
+const TABS = { pet: renderHome, trilhas: renderTrilhasTab, financas: renderFinance, ajuda: renderHelp };
 let tab = 'pet';
 let tabbar = null;
 
@@ -56,20 +71,25 @@ function route() {
   tabbar = null;
   if (!hasPet()) { renderEgg(host, route); return; }
 
-  TABS[tab](host);
+  // The tab bar goes in first, so the home screen can refresh its badge.
   tabbar = renderTabbar(tab, (next) => {
     if (next === tab) return;
     tab = next;
     route();
   });
   host.after(tabbar);
+  TABS[tab](host);
 }
 
 function boot() {
   if (new URLSearchParams(location.search).has('reset')) resetSave();
+  // ?motion: full effects even with the system's reduce motion on.
+  if (forceMotion) document.documentElement.classList.add('motion-full');
   lockGestures();
   initViewport();
   initDebugHud();
+  // The info screen retired the pet for a new egg: back to the egg pick.
+  document.addEventListener('pet:new-egg', () => { tab = 'pet'; route(); });
   route();
   console.log('[pet-tigrinho] ready', getViewport());
 }

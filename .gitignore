@@ -4,3 +4,6 @@ dist/
 *.log
 .env
 __pycache__/
+
+# MCP servers with machine-specific paths (REA, etc.) - local only
+.mcp.json

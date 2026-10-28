@@ -130,6 +130,20 @@ ok('still ready for the next stage', S.canEvolve(), true);
 ok('second tap -> Tigre Cósmico', S.evolve()?.id, 'tigre-cosmico');
 ok('final form never ready', [S.canEvolve(), S.evolve()], [false, null]);
 
+// --- encyclopedia and a new egg after the final form ---
+ok('the whole line is discovered', [...S.discovered()].sort(), ['estreliger', 'tigre-cosmico', 'tigrin']);
+ok('new egg opens at the final form', S.canStartNewEgg(), true);
+const before = S.activity('all').xp;
+ok('new egg retires the pet', S.startNewEgg(), true);
+ok('back to the egg pick', [S.hasPet(), S.getState().xp, S.canStartNewEgg()], [false, 0, false]);
+ok('retired pet is kept', S.retiredPets().map((p) => p.form), ['tigre-cosmico']);
+ok('lifetime xp keeps the retired pet', S.activity('all').xp, before);
+S.chooseEgg('verde');
+ok('new pet starts at Nv 1', [S.level().level, S.currentForm().id], [1, 'folhiger']);
+ok('encyclopedia keeps both lines', S.discovered().has('tigre-cosmico') && S.discovered().has('folhiger'), true);
+ok('level medals stay earned', S.medals().find((m) => m.id === 'lv-16').done, true);
+ok('no new egg before the final form', [S.canStartNewEgg(), S.startNewEgg()], [false, false]);
+
 // --- v1 saves migrate ---
 store.set('pet-tigrinho:save', JSON.stringify({ version: 1, pet: { egg: 'jade', name: 'Rex' }, xp: 500, stage: 1,
   totals: { photo: 1, steps: 2000, book: 0, course: 0 }, daily: { date: 'x' }, log: [] }));
@@ -144,6 +158,7 @@ store.set('pet-tigrinho:save', JSON.stringify({ version: 2, pet: { egg: 'branco'
 const retired = await import('../src/js/state.js?retired');
 ok('retired Raro -> Estreliger', retired.currentForm().id, 'estreliger');
 ok('retired save keeps name', retired.petName(), 'Luz');
+ok('old save discovers its line', [...retired.discovered()].sort(), ['estreliger', 'tigrin']);
 store.set('pet-tigrinho:save', JSON.stringify({ version: 2, pet: { egg: 'azul' }, form: 'gotigre',
   xp: 100, phase: {}, totals: {}, daily: { date: 'x' }, log: [] }));
 ok('retired base -> Tigre d\'Água', (await import('../src/js/state.js?retired3')).currentForm().id, 'tigre-dagua');

@@ -5,6 +5,7 @@ import { iconArt } from './art.js';
 const TABS = [
   { id: 'pet',      label: 'Pet',      icon: ICONS.paw },
   { id: 'financas', label: 'Finanças', icon: ICONS.coin },
+  { id: 'ajuda',    label: 'Ajuda',    icon: ICONS.heart },
 ];
 
 /**

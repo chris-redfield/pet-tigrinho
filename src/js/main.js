@@ -2,6 +2,9 @@ import { initViewport, onViewportChange, getViewport } from './viewport.js';
 import { hasPet, resetSave } from './state.js';
 import { renderEgg } from './ui/egg.js';
 import { renderHome } from './ui/home.js';
+import { renderFinance } from './ui/finance.js';
+import { renderTabbar } from './ui/tabbar.js';
+import { renderHelp } from './ui/help.js';
 
 /** Kills the browser gestures that break a fullscreen game. */
 function lockGestures() {
@@ -41,12 +44,25 @@ function initDebugHud() {
 
 const screens = () => document.getElementById('screens');
 
-/** Egg pick on first run, the pet from then on. */
+const TABS = { pet: renderHome, financas: renderFinance, ajuda: renderHelp };
+let tab = 'pet';
+let tabbar = null;
+
+/** Egg pick on first run; after that the pet and finance tabs, with the footer. */
 function route() {
   const host = screens();
   host.replaceChildren();
-  if (hasPet()) renderHome(host);
-  else renderEgg(host, route);
+  tabbar?.remove();
+  tabbar = null;
+  if (!hasPet()) { renderEgg(host, route); return; }
+
+  TABS[tab](host);
+  tabbar = renderTabbar(tab, (next) => {
+    if (next === tab) return;
+    tab = next;
+    route();
+  });
+  host.after(tabbar);
 }
 
 function boot() {

@@ -176,11 +176,17 @@ stage.
 
 ## Run
 
-ES modules need HTTP, so `file://` will not work:
+ES modules need HTTP, so `file://` will not work. The dev server serves
+the game and proxies the Finanças chat to Gemini (Node 20.12+, no deps):
 
 ```sh
-python3 -m http.server 8000
+cp .env.example .env    # then paste your GEMINI_API_KEY
+node server.js
 ```
+
+Without a key the game still runs; only the Finanças chat says it is not
+configured. A plain `python3 -m http.server 8000` also serves the game, minus
+the chat. Setup, key safety and deploy options: `docs/gemini.md`.
 
 Then <http://localhost:8000>. Query flags: `?debug=1` for a viewport HUD,
 `?reset=1` to wipe the save, `?dev=1` for a dev button on the home screen
@@ -190,6 +196,7 @@ log real actions first to steer the Azul branch).
 ```sh
 node test/state.test.mjs
 node test/pedometer.test.mjs
+node test/gemini.test.mjs
 ```
 
 On a phone: the camera works over plain HTTP, but the step sensor only

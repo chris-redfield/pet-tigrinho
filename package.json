@@ -1,0 +1,13 @@
+{
+  "name": "pet-tigrinho",
+  "private": true,
+  "type": "module",
+  "description": "Um bichinho que cresce com o que você faz na vida real.",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/state.test.mjs && node test/pedometer.test.mjs && node test/gemini.test.mjs"
+  }
+}

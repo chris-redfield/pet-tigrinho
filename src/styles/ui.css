@@ -688,3 +688,163 @@
   font: 700 calc(var(--u) * 3)/1 ui-monospace, monospace;
 }
 .dev-lvl:active { background: #030; }
+
+/* ---------- footer tab bar ---------- */
+
+.tabbar {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: calc(var(--u) * .5) solid var(--c-gold-dim);
+  background: linear-gradient(180deg, #5e0d12, var(--c-red-deep));
+}
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: calc(var(--u) * .6);
+  padding: calc(var(--u) * 2) 0 calc(var(--u) * 2.4);
+  color: var(--c-ink-dim);
+}
+.tab__icon { width: calc(var(--u) * 6.4); height: calc(var(--u) * 6.4); fill: currentColor; }
+.tab__icon path { fill-rule: evenodd; }
+.tab__label { font-size: calc(var(--u) * 2.9); font-weight: 700; }
+.tab[aria-current="page"] { color: var(--c-gold); }
+.tab[aria-current="page"] .tab__label { color: var(--c-gold-lit); }
+.tab:active { filter: brightness(1.2); }
+
+/* ---------- finance chat ---------- */
+
+.finance {
+  gap: calc(var(--u) * 2.4);
+  padding: calc(var(--u) * 4) calc(var(--u) * 5) calc(var(--u) * 2);
+}
+.finance__hdr { flex: 0 0 auto; }
+.finance__title { margin: 0; font-size: calc(var(--u) * 6.4); }
+.finance__sub { margin: calc(var(--u) * .6) 0 0; font-size: calc(var(--u) * 3); color: var(--c-ink-dim); }
+
+.finance__warn {
+  flex: 0 0 auto;
+  padding: calc(var(--u) * 2.4) calc(var(--u) * 3.2);
+  border-color: #c98a2a;
+  background: linear-gradient(180deg, #4e0b10, #3b080c);
+  font-size: calc(var(--u) * 2.8);
+  line-height: 1.45;
+  color: var(--c-ink-dim);
+}
+.finance__warn strong { color: var(--c-gold-lit); }
+.finance__warn a { color: var(--c-gold); }
+
+.chat__log {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 2.4);
+  padding: calc(var(--u) * 1) 0;
+}
+.msg {
+  max-width: 88%;
+  padding: calc(var(--u) * 2.4) calc(var(--u) * 3.4);
+  border-radius: var(--r-md);
+  font-size: calc(var(--u) * 3.3);
+  line-height: 1.45;
+  user-select: text;
+  overflow-wrap: anywhere;
+}
+.msg p { margin: 0; }
+.msg p + p, .msg p + ul, .msg ul + p { margin-top: calc(var(--u) * 1.6); }
+.msg ul { margin: 0; padding-left: calc(var(--u) * 4.4); }
+.msg li + li { margin-top: calc(var(--u) * .8); }
+.msg strong { color: var(--c-gold-lit); }
+.msg--model {
+  align-self: flex-start;
+  border: calc(var(--u) * .4) solid var(--c-gold-dim);
+  border-bottom-left-radius: var(--r-sm);
+  background: #5e0d12;
+}
+.msg--user {
+  align-self: flex-end;
+  border-bottom-right-radius: var(--r-sm);
+  background: linear-gradient(180deg, var(--c-gold-lit), var(--c-gold));
+  color: #4a2403;
+  font-weight: 600;
+}
+.msg--wait { align-self: flex-start; color: var(--c-ink-dim); font-style: italic; }
+.msg--error { align-self: stretch; max-width: none; background: #ffb37a1f; color: #ffcf9f; font-size: calc(var(--u) * 3); }
+
+.chat__chips { flex: 0 0 auto; display: flex; gap: calc(var(--u) * 2); }
+.chip {
+  flex: 1 1 0;
+  padding: calc(var(--u) * 1.8) 0;
+  border-radius: 999px;
+  border: calc(var(--u) * .4) solid var(--c-gold-dim);
+  background: #4e0b10;
+  color: var(--c-gold-lit);
+  font-size: calc(var(--u) * 3);
+  font-weight: 700;
+  white-space: nowrap;
+}
+.chip:active { background: #6b1016; }
+
+.chat__form { flex: 0 0 auto; display: flex; gap: calc(var(--u) * 2); }
+.chat__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: calc(var(--u) * 3) calc(var(--u) * 3.6);
+  border-radius: 999px;
+  border: calc(var(--u) * .5) solid var(--c-gold-dim);
+  background: #3b080c;
+  color: var(--c-ink);
+  font: inherit;
+  font-size: calc(var(--u) * 3.4);
+  user-select: text;
+  outline: none;
+}
+.chat__input:focus { border-color: var(--c-gold); }
+.chat__input::placeholder { color: var(--c-ink-dim); opacity: .6; }
+.chat__send, .chat__mic {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: calc(var(--u) * 12);
+  border-radius: 50%;
+}
+.chat__send { background: linear-gradient(180deg, var(--c-gold-lit), var(--c-gold)); }
+.chat__mic { border: calc(var(--u) * .5) solid var(--c-gold-dim); background: #4e0b10; }
+.chat__mic[data-on="true"] { border-color: var(--c-gold); background: #6b1016; }
+.chat__send-icon { width: calc(var(--u) * 5.6); height: calc(var(--u) * 5.6); fill: #4a2403; }
+.chat__mic-icon { width: calc(var(--u) * 5.6); height: calc(var(--u) * 5.6); fill: var(--c-gold); }
+.chat__form[data-busy] .chat__send { opacity: .45; }
+
+.finance__legal {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: calc(var(--u) * 2.4);
+  line-height: 1.35;
+  color: var(--c-ink-dim);
+  opacity: .8;
+  text-align: center;
+}
+
+/* Tigrin's avatar beside its messages, pinned to the bubble's last line. */
+.msg-row {
+  align-self: flex-start;
+  display: flex;
+  align-items: flex-end;
+  gap: calc(var(--u) * 2);
+  max-width: 94%;
+}
+.msg-row .msg { max-width: none; min-width: 0; }
+.msg__avatar {
+  flex: 0 0 auto;
+  width: calc(var(--u) * 10);
+  height: calc(var(--u) * 10);
+  border-radius: 50%;
+  border: calc(var(--u) * .45) solid var(--c-gold);
+  background: radial-gradient(circle at 50% 35%, #ffe9a8, #f5c242 70%);
+  object-fit: cover;
+  object-position: 50% 30%;
+}

@@ -134,6 +134,7 @@ src/styles/   base (reset + tokens) · stage (viewport) · ui (screens)
 src/js/       config · forms · sprites · state · viewport · main
 src/js/ui/    dom · art · egg · home · sheet · evolve · info
 assets/pet/   form sprites, <id>.webp, 900px
+assets/icons/ action button icons, <action>.webp, 256px
 assets/source/ original artwork, <id>.png, untouched
 docs/         evolucoes.md: forms + ChatGPT prompts
 tools/        sprites.py: source art -> sprites
@@ -199,6 +200,11 @@ python3 tools/sprites.py              # needs Pillow
 It crops each new source to its alpha bounds, resamples it to a 900px wide
 `assets/pet/<id>.webp`, regenerates `src/js/sprites.js` (the list of forms
 that have a sprite, read by `forms.js`) and prints what is still missing.
+
+Action icons work the same way: `assets/source/icons/<action>.png` (action
+ids: `photo`, `steps`, `book`, `course`, `meal`) becomes a 256px square
+`assets/icons/<action>.webp`. Until an action has one, its button shows the
+built-in gold SVG from `ICONS` in `config.js`.
 `--knockout` clears a painted white background; `--force` redoes all.
 
 `scale` (sprite width as a percentage of stage width) defaults by rarity in

@@ -159,39 +159,53 @@
   50%      { transform: scale(1.06); opacity: 1; }
 }
 
-/* ---------- action grid ---------- */
+/* ---------- home body: action column + pet ---------- */
 
+.home-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  align-items: stretch;
+  gap: calc(var(--u) * 2);
+  padding: calc(var(--u) * 3) calc(var(--u) * 4) calc(var(--u) * 5);
+}
+.home-body .pet-stage { flex: 1 1 auto; min-width: 0; }
+
+/* Square icon buttons, one per action, stacked down the left side. */
 .actions {
+  position: relative;
+  z-index: 2;
   flex: 0 0 auto;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   gap: calc(var(--u) * 3);
-  padding: calc(var(--u) * 3) calc(var(--u) * 5) calc(var(--u) * 5);
 }
 .act {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: calc(var(--u) * 2.4);
-  padding: calc(var(--u) * 3) calc(var(--u) * 3.2);
-  text-align: left;
+  justify-content: center;
+  gap: calc(var(--u) * .6);
+  width: calc(var(--u) * 18);
+  aspect-ratio: 1;
+  padding: calc(var(--u) * 1.6);
   transition: transform .12s var(--ease), filter .12s var(--ease);
 }
-.act:active { transform: scale(.96); filter: brightness(1.12); }
+.act:active { transform: scale(.94); filter: brightness(1.12); }
 .act__icon {
   flex: 0 0 auto;
-  width: calc(var(--u) * 7.5);
-  height: calc(var(--u) * 7.5);
+  width: calc(var(--u) * 9);
+  height: calc(var(--u) * 9);
   fill: var(--c-gold);
 }
-.act__txt { min-width: 0; }
-.act__label {
-  font-size: calc(var(--u) * 3.7);
-  font-weight: 700;
-  line-height: 1.15;
-}
+.act__icon--art { width: calc(var(--u) * 11); height: calc(var(--u) * 11); object-fit: contain; }
 .act__rate {
   font-size: calc(var(--u) * 2.7);
+  font-weight: 700;
+  line-height: 1;
   color: var(--c-gold);
+  white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
 .act[data-done="true"] { filter: saturate(.35) brightness(.78); }
@@ -608,8 +622,6 @@
 }
 .info__hint { margin: calc(var(--u) * -1.5) 0 0; text-align: center; font-size: calc(var(--u) * 2.9); color: var(--c-ink-dim); }
 
-/* Odd action out (5 actions on a 2-column grid) spans the full row. */
-.act:last-child:nth-child(odd) { grid-column: 1 / -1; justify-content: center; }
 
 /* ---------- egg details ---------- */
 

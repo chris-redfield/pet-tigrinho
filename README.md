@@ -52,7 +52,7 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
 
 1. **First run** — pick one of four eggs, each showing what it hatches:
    Branco → Tigrin (Normal), Vermelho → Brasinha (Fogo),
-   Azul → Gotigre (Água), Verde → Folhiger (Grama).
+   Azul → Tigre d'Água (Água), Verde → Folhiger (Grama).
 2. **Log real-world actions** — five of them, each a flat XP rate:
 
    | Action   | Rate              | Daily cap   | Feeds      |
@@ -63,10 +63,10 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    | Estudo   | +20 XP / 30 min   | 180 min     | Sabedoria  |
    | Refeição | +10 XP / meal     | 4 meals     | Saciedade  |
 
-3. **Level** — going from Nv L to L+1 costs `L × LEVEL_STEP` (15) XP, so
-   Nv 16 is at 1.800 XP and Nv 36 at 9.450. A normal day lands near 150 XP
-   and a maxed one ~510, so the first evolution is about two weeks in and
-   the second about two months.
+3. **Level** — going from Nv L to L+1 costs `L × LEVEL_STEP` (6) XP, so
+   Nv 16 is at 720 XP and Nv 36 at 3.780. A normal day lands near 150 XP
+   and a maxed one ~510, so the first evolution is about five days in and
+   the second about three and a half weeks.
 4. **Evolve** — five lines of three forms, Pokémon style, at Nv 16 and
    Nv 36. The tree (14 forms) is data in `src/js/forms.js`:
 
@@ -74,11 +74,11 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    |----------|----------|----------------|------------------|
    | Branco   | Tigrin   | Estreliger     | Tigre Cósmico    |
    | Vermelho | Brasinha | Tigre-Fornalha | Mechatigre       |
-   | Azul     | Gotigre  | Tigre d'Água   | Tigre-Leviatã    |
-   | Azul     | Gotigre  | Neviger        | Tigre-Glacial    |
+   | Azul     | Tigre d'Água | Oceaniger  | Tigre-Leviatã    |
+   | Azul     | Tigre d'Água | Neviger    | Tigre-Glacial    |
    | Verde    | Folhiger | Floriger       | Tigre-Yggdrasil  |
 
-   Only the Azul egg branches: at Nv 16 Gotigre becomes Tigre d'Água
+   Only the Azul egg branches: at Nv 16 Tigre d'Água becomes Oceaniger
    (Felicidade ≥ 70%) or Neviger (Sabedoria ≥ 60% and Saúde ≥ 60%). Rule
    (`pickBranch` in `src/js/state.js`): each route's *margin* is how far
    its weakest required bar is above (or below) its requirement, and the
@@ -86,6 +86,13 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    met, the one cleared by more wins (it follows what the player focused
    on, not the harder route); if neither is met, the closest wins. Ties go
    to the first listed.
+
+   Reaching the level does not evolve the pet by itself: a glow in its
+   line's colour (`aura` in `forms.js`) hugs it, small stars rise around
+   it, and the home screen says *Toque no tigrinho para evoluir*. Other
+   looks can be compared side by side in `dev/aura-lab.html`. The player
+   taps the pet when they want; the branch is decided at that tap. Nothing
+   pushes them to — the pet waits, and XP keeps counting meanwhile.
 
 5. **Status bars** measure the current *phase* (since the last evolution):
    XP earned from the bar's source actions as a share of `share × phase
@@ -130,6 +137,7 @@ assets/pet/   form sprites, <id>.webp, 900px
 assets/source/ original artwork, <id>.png, untouched
 docs/         evolucoes.md: forms + ChatGPT prompts
 tools/        sprites.py: source art -> sprites
+dev/          aura-lab.html: ready-to-evolve animation lab
 test/         node test/state.test.mjs
 ```
 
@@ -168,7 +176,9 @@ python3 -m http.server 8000
 ```
 
 Then <http://localhost:8000>. Query flags: `?debug=1` for a viewport HUD,
-`?reset=1` to wipe the save.
+`?reset=1` to wipe the save, `?dev=1` for a dev button on the home screen
+that grants exactly the XP to the next level (it feeds no status bar, so
+log real actions first to steer the Azul branch).
 
 ```sh
 node test/state.test.mjs

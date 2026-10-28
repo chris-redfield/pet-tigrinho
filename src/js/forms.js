@@ -26,6 +26,10 @@
  * lands. `scale` is the sprite width as a percentage of stage width; later
  * forms carry effects outside the body and get more room by default. Pass
  * `scale` to a form to override it.
+ *
+ * `aura` is the colour of the glow around the pet when it is ready to
+ * evolve. A form inherits its parent's unless it sets its own, so it is set
+ * once per line, and again where a line changes element (Neviger).
  */
 
 import { SPRITES } from './sprites.js';
@@ -40,22 +44,23 @@ const list = [];
 
 function form(id, name, type, rarity, extra = {}) {
   const art = SPRITES.includes(id) ? `assets/pet/${id}.webp` : FALLBACK;
-  list.push({ id, name, type, rarity, art, scale: SCALE[rarity], from: null, ...extra });
+  const parent = list.find((f) => f.id === extra.from);
+  list.push({ id, name, type, rarity, art, scale: SCALE[rarity], from: null, aura: parent?.aura, ...extra });
 }
 
 // ---------- Ovo Branco: Cósmico ----------
 
 form('tigrin', 'Tigrin', 'Normal', 'comum',
-  { desc: 'O Tigrinho base, equilibrado e com grande potencial de adaptação.' });
+  { aura: '#ffd36b', desc: 'O Tigrinho base, equilibrado e com grande potencial de adaptação.' });
 form('estreliger', 'Estreliger', 'Normal/Cósmico', 'raro',
-  { from: 'tigrin', desc: 'As listras brilham como constelações e pequenas estrelas orbitam ao redor.' });
+  { from: 'tigrin', aura: '#9b8cff', desc: 'As listras brilham como constelações e pequenas estrelas orbitam ao redor.' });
 form('tigre-cosmico', 'Tigre Cósmico', 'Normal/Cósmico', 'lendario',
   { from: 'estreliger', desc: 'Carrega uma galáxia na cauda e planetas em órbita.' });
 
 // ---------- Ovo Vermelho: Fogo ----------
 
 form('brasinha', 'Brasinha', 'Fogo', 'comum',
-  { desc: 'Um Tigrinho quente, com pelagem avermelhada e muita energia.' });
+  { aura: '#ff8a3d', desc: 'Um Tigrinho quente, com pelagem avermelhada e muita energia.' });
 form('tigre-fornalha', 'Tigre-Fornalha', 'Fogo/Metálico', 'raro',
   { from: 'brasinha', desc: 'Desenvolve uma armadura de ferro quente.' });
 form('mechatigre', 'Mechatigre', 'Fogo/Metálico', 'lendario',
@@ -64,13 +69,13 @@ form('mechatigre', 'Mechatigre', 'Fogo/Metálico', 'lendario',
 // ---------- Ovo Azul: Água / Gelo ----------
 
 form('tigre-dagua', "Tigre d'Água", 'Água', 'comum',
-  { scale: 78, desc: 'Um Tigrinho brincalhão, com ondas na cauda e gotas flutuando ao redor.' });
+  { scale: 78, aura: '#5cc8ff', desc: 'Um Tigrinho brincalhão, com ondas na cauda e gotas flutuando ao redor.' });
 
 form('oceaniger', 'Oceaniger', 'Água', 'raro',
   { from: 'tigre-dagua', needs: { happiness: 70 },
     desc: 'Ondas formam sua juba e ele carrega um pequeno tridente.' });
 form('neviger', 'Neviger', 'Água/Gelo', 'raro',
-  { from: 'tigre-dagua', needs: { wisdom: 60, health: 60 },
+  { from: 'tigre-dagua', needs: { wisdom: 60, health: 60 }, aura: '#bfeaff',
     desc: 'A água em seu corpo congela, formando uma armadura de gelo.' });
 
 form('tigre-leviata', 'Tigre-Leviatã', 'Água', 'lendario',
@@ -81,7 +86,7 @@ form('tigre-glacial', 'Tigre-Glacial', 'Água/Gelo', 'lendario',
 // ---------- Ovo Verde: Grama ----------
 
 form('folhiger', 'Folhiger', 'Grama', 'comum',
-  { desc: 'Um Tigrinho com folhagens no lugar da juba, que adora sol.' });
+  { aura: '#8de36b', desc: 'Um Tigrinho com folhagens no lugar da juba, que adora sol.' });
 form('floriger', 'Floriger', 'Grama/Fada', 'raro',
   { from: 'folhiger', desc: 'Flores exóticas desabrocham em sua juba.' });
 form('tigre-yggdrasil', 'Tigre-Yggdrasil', 'Grama/Fada', 'lendario',

@@ -239,10 +239,10 @@ export function remainingToday(type) {
  *
  * XP is a flat rate per unit and is cut off at the daily cap - over the cap
  * the action is still logged to the player's totals, it just stops paying.
- * Reaching an evolution level evolves the pet along the branch its status
- * bars point to, and starts a new phase.
+ * Reaching an evolution level does not evolve the pet: it makes it ready,
+ * and the player taps the pet to evolve it (see `evolve`).
  *
- * @returns {{gained:number, paidUnits:number, cappedUnits:number, evolved:object|null}}
+ * @returns {{gained:number, paidUnits:number, cappedUnits:number, ready:boolean}}
  */
 export function logAction(type, units) {
   rollDay();
@@ -250,7 +250,7 @@ export function logAction(type, units) {
   if (!cfg) throw new Error(`unknown action: ${type}`);
 
   units = Math.max(0, Math.round(units));
-  if (!units) return { gained: 0, paidUnits: 0, cappedUnits: 0, evolved: null };
+  if (!units) return { gained: 0, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
 
   const paidUnits = Math.min(units, remainingToday(type));
   const gained = Math.round((paidUnits / cfg.step) * cfg.xp);
@@ -260,19 +260,49 @@ export function logAction(type, units) {
   state.phase[type] += gained;
   state.daily[type] = (state.daily[type] || 0) + paidUnits;
 
-  let evolved = null;
-  while (phaseBounds().next && state.xp >= levelStart(phaseBounds().next)) {
-    evolved = nextBranch().form;
-    state.form = evolved.id;
-    state.phase = zeroes();
-  }
-
   state.log.unshift({ type, units, gained, at: new Date().toISOString() });
   state.log.length = Math.min(state.log.length, 100);
 
   persist();
 
-  return { gained, paidUnits, cappedUnits: units - paidUnits, evolved };
+  return { gained, paidUnits, cappedUnits: units - paidUnits, ready: canEvolve() };
+}
+
+/** True once XP has reached the next evolution level; the pet waits for a tap. */
+export function canEvolve() {
+  const { next } = phaseBounds();
+  return Boolean(state.pet && next && state.xp >= levelStart(next));
+}
+
+/**
+ * The player tapped the pet: evolve it one stage, along the branch its
+ * status bars point to right now, and start a new phase. Nothing pushes the
+ * player to do this - the pet waits, and XP keeps counting meanwhile. If
+ * XP already covers the stage after this one, the pet is ready again.
+ *
+ * @returns {object|null} the new form, or null if it was not ready
+ */
+export function evolve() {
+  if (!canEvolve()) return null;
+  const form = nextBranch().form;
+  state.form = form.id;
+  state.phase = zeroes();
+  persist();
+  return form;
+}
+
+/**
+ * Dev only (the home screen shows it with ?dev): grants exactly the XP
+ * left to reach the next level. It feeds no status bar, so the branch the
+ * pet takes is decided by whatever real actions were logged this phase.
+ * Same result shape as logAction.
+ */
+export function devLevelUp() {
+  if (!state.pet) return { gained: 0, paidUnits: 0, cappedUnits: 0, ready: false };
+  const gained = levelStart(level().level + 1) - state.xp;
+  state.xp += gained;
+  persist();
+  return { gained, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
 }
 
 export function resetSave() {

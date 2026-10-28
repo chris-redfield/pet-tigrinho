@@ -81,11 +81,12 @@ export const RARITIES = {
  * Pet level, read straight off lifetime XP.
  *
  * Going from level L to L+1 costs L * LEVEL_STEP XP, so level L starts at
- * LEVEL_STEP * L(L-1)/2. With 15: Nv 16 (first evolution) at 1.800 XP and
- * Nv 36 (second) at 9.450 XP. A normal ~150 XP day puts those about two
- * weeks and two months in. Fixed and published like everything else.
+ * LEVEL_STEP * L(L-1)/2. With 6: Nv 16 (first evolution) at 720 XP and
+ * Nv 36 (second) at 3.780 XP. A normal ~150 XP day puts those about five
+ * days and three and a half weeks in. Fixed and published like everything
+ * else.
  */
-export const LEVEL_STEP = 15;
+export const LEVEL_STEP = 6;
 
 /**
  * Pet status bars.

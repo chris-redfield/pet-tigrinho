@@ -15,7 +15,7 @@ export function renderEgg(host, onHatched) {
   let picked = null;
 
   const row = h('div', { class: 'egg-row' });
-  const detail = h('p', { class: 'egg-detail', text: 'Cada ovo choca um tigrinho diferente.' });
+  const detail = h('p', { class: 'egg-detail', text: 'Cada ovo choca um bichinho diferente.' });
   const confirm = h('button', {
     class: 'btn', type: 'button', text: 'Escolha um ovo', disabled: true,
     onclick: hatch,

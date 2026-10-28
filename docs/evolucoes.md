@@ -1,23 +1,23 @@
 # Evoluções do Pet Tigrinho — guia e prompts dos sprites
 
 Este guia tem duas partes. **No jogo** são as formas implementadas hoje, com o
-prompt de cada sprite. O **catálogo completo** no fim guarda as 52 formas do
+prompt que gerou cada sprite. O **catálogo completo** no fim guarda as 52 formas do
 design original; as marcadas com ✅ são as que estão no jogo, e as outras
 ficam como ideia para depois.
 
 ## No jogo
 
 14 formas em 5 linhas de 3 estágios, saindo de 4 ovos. O Ovo Azul é o único
-que ramifica: no Nv. 16 o Gotigre vira Tigre d'Água ou Neviger, conforme os
+que ramifica: no Nv. 16 o Tigre d'Água vira Oceaniger ou Neviger, conforme os
 status.
 
-🎨 = sprite pronto.
+Todas as 14 têm sprite (`assets/pet/<id>.webp`).
 
 | Ovo | Base (Comum) | Nv. 16 (Raro) | Nv. 36 (Lendário) |
 |---|---|---|---|
-| Branco | Tigrin 🎨 | Estreliger | Tigre Cósmico 🎨 |
+| Branco | Tigrin | Estreliger | Tigre Cósmico |
 | Vermelho | Brasinha | Tigre-Fornalha | Mechatigre |
-| Azul | Gotigre | Tigre d'Água 🎨 | Tigre-Leviatã |
+| Azul | Tigre d'Água | Oceaniger | Tigre-Leviatã |
 | Azul | ″ | Neviger | Tigre-Glacial |
 | Verde | Folhiger | Floriger | Tigre-Yggdrasil |
 
@@ -26,22 +26,22 @@ algum requisito lá, atualize aqui também.
 
 ### Regra do Ovo Azul (Nv. 16)
 
-No Nv. 16 o Gotigre vira Água ou Gelo conforme os status naquele momento:
+No Nv. 16 o Tigre d'Água vira Água ou Gelo conforme os status naquele momento:
 
 | Rota | Requisito |
 |---|---|
-| Tigre d'Água | Felicidade ≥ 70% |
-| Neviger | Sabedoria ≥ 60% **e** Saúde ≥ 60% |
+| Oceaniger (Água) | Felicidade ≥ 70% |
+| Neviger (Gelo) | Sabedoria ≥ 60% **e** Saúde ≥ 60% |
 
 Cada rota tem uma **folga**: quanto o status *mais fraco* que ela pede passou
 do requisito (ou quanto faltou, se for negativo). **Vence a maior folga.**
 
 - **Só uma rota cumprida:** ela vence.
 - **As duas cumpridas:** vence a que passou por mais. Ex.: Felicidade 95%,
-  Sabedoria 65%, Saúde 70% → Água tem folga +25, Gelo +5 → **Tigre d'Água**.
+  Sabedoria 65%, Saúde 70% → Água tem folga +25, Gelo +5 → **Oceaniger**.
   Felicidade 72%, Sabedoria 85%, Saúde 90% → Água +2, Gelo +25 → **Neviger**.
 - **Nenhuma cumprida:** vence a que chegou mais perto.
-- **Empate:** vence Tigre d'Água (a primeira listada em `forms.js`).
+- **Empate:** vence Oceaniger (a primeira listada em `forms.js`).
 
 Nada é sorteado: os mesmos status sempre dão a mesma forma, e a tela de
 informações (ⓘ) mostra ao vivo para qual forma o pet evoluiria agora. As
@@ -49,60 +49,32 @@ outras linhas evoluem direto, sem escolha.
 
 ---
 
-## Fluxo: do ChatGPT pro jogo
+## Como os sprites foram feitos
 
-Sem API: as imagens saem da interface web do ChatGPT e o resto é automático.
-É a mesma receita que gerou o Tigrin, o Tigre d'Água e o Tigre Cósmico:
-**gerar → tirar o fundo → sintetizar**, sempre partindo da imagem anterior
-na mesma conversa.
+Sem API: as imagens saíram da interface web do ChatGPT, e o resto é
+automático. Os prompts abaixo são os que funcionaram — use-os de modelo para
+formas novas.
 
-### Conversas
+### Receita
 
-Uma conversa por linha, na ordem indicada. O ChatGPT mantém o estilo muito
-melhor quando cada forma sai da imagem anterior da mesma conversa.
-
-| Conversa | Anexe no início | Ordem |
-|---|---|---|
-| Cósmica | `tigrin.png` + `tigre-cosmico.png` | Estreliger |
-| Fogo | `tigrin.png` | Brasinha → Tigre-Fornalha → Mechatigre |
-| Azul / Gelo | `tigrin.png` + `tigre-dagua.png` | Gotigre → Neviger → Tigre-Glacial |
-| Água | `tigre-dagua.png` | Tigre-Leviatã |
-| Grama | `tigrin.png` | Folhiger → Floriger → Tigre-Yggdrasil |
-
-Os PNGs ficam em `assets/source/`; é só arrastar para o ChatGPT.
-
-### Para cada forma: 3 mensagens
-
-Selecione a ferramenta **Criar imagem** do ChatGPT na primeira mensagem.
-
-1. **Gerar** — a primeira forma da conversa leva o *bloco de estilo* + o
-   prompt da forma. As seguintes levam só o prompt da forma: ela sai da
-   última imagem gerada.
-2. **Tirar o fundo:**
-
-   ```text
-   Good job. Now take this last tiger and remove the background, make the
-   background transparent.
-   ```
-
-3. **Sintetizar** (menos detalhe, para ler bem no celular):
-
-   ```text
-   Now add synthesis to this last image: less detail, fewer small
-   elements, flatter shading, cleaner and bolder shapes. Keep the same
-   character, pose and colors, and keep the background transparent.
-   ```
-
-Se a imagem vier com algo a mais (cartas, moedas, letras), junte na
-mensagem 2: *"Remove the playing cards."* Se o resultado ficar ruim, não
-insista no mesmo texto: peça uma alteração pontual sobre a imagem (*"make
-the fur of this latest image green"*) — foi assim que o Tigre d'Água saiu.
+- **Uma mensagem por forma**, com a ferramenta **Criar imagem**, na conversa
+  original do Tigrin ou numa conversa nova (os prompts não dependem do
+  histórico).
+- **Anexe sempre `assets/source/tigrin.png`** como referência de estilo. Numa
+  evolução, anexe também a forma anterior (a segunda imagem).
+- **Todo prompt pede as mesmas três coisas:** manter o estilo Pokémon,
+  manter sintético (pouco detalhe) e fundo transparente — e só então lista o
+  que muda na forma.
+- **Evolução = um pouco maior, mais velha e mais confiante, mas ainda
+  fofa.** O Lendário é o mais imponente da linha e nunca assustador.
+- Se o resultado não ficar bom, peça uma alteração pontual sobre a imagem em
+  vez de repetir o prompt.
 
 ### Pro jogo
 
-1. **Baixe o PNG final** (o da mensagem 3) e salve como
-   `assets/source/<id>.png` (o id está no título de cada forma).
-2. **Rode:**
+1. Salve o PNG como `assets/source/<id>.png` — exatamente o id da forma
+   (`mechatigre`, não `mecha-tigre`; `tigre-leviata`, sem acento).
+2. Rode:
 
    ```sh
    python3 tools/sprites.py
@@ -111,179 +83,397 @@ the fur of this latest image green"*) — foi assim que o Tigre d'Água saiu.
    Ele recorta, redimensiona para 900px, grava `assets/pet/<id>.webp`, liga o
    sprite no jogo (`src/js/sprites.js`) e lista o que ainda falta.
 
-**Se o fundo não vier transparente** (o script avisa): repita a mensagem 2
-ou rode `python3 tools/sprites.py --knockout`. O knockout só apaga o fundo
-ligado às bordas; um buraco branco fechado (entre a cauda e o corpo, por
-exemplo) continua branco.
+**Se o fundo não vier transparente** (o script avisa): peça de novo ou rode
+`python3 tools/sprites.py --knockout`. O knockout só apaga o fundo ligado às
+bordas; um buraco branco fechado (entre a cauda e o corpo, por exemplo)
+continua branco.
 
 **Se o pet ficar pequeno ou grande demais na tela:** passe `scale` na forma
 em `forms.js` (largura do sprite em % da tela; padrão 62 / 78 / 84 por
 raridade).
 
-### Bloco de estilo (primeira mensagem de cada conversa)
+### Os três blocos que se repetem
+
+Forma base (anexo: `tigrin.png`):
 
 ```text
-Create an image. Use the attached "tigrin.png" as the reference for the
-art style. The character must be a young tiger cub, cute and small, super
-kawaii, with the same colors and aesthetics as the reference: thick dark
-outlines, clean cel shading, big glossy eyes, small fangs, happy open
-mouth, full body in a dynamic jumping 3/4 pose. Nothing else should be on
-the screen: no letters, no text, no playing cards, no coins, no frame, no
-ground, no scenery. Effects around the body (water, flames, stars) may
-extend outside the silhouette. Avoid pure red on the body unless it is a
-fire form, because the game background is lacquer red and gold.
+Create a <element> version of the tiger in the attached image, as if it
+were a new Pokémon of the same evolution family.
+
+Keep everything else the same: same age and size, same pose, same art
+style. Keep the Pokémon style: a cute creature design with simple
+readable shapes, clean outlines and bright cel shading, like official
+Pokémon art. Keep it synthetic: low detail, flat shading, clean bold
+shapes. Transparent background, and nothing else on the screen: no
+letters, no playing cards, no coins.
+
+What changes in this <element> version:
+- ...
 ```
 
-Regra visual: quanto mais avançada a forma, maior o porte e mais elaborados
-os ornamentos e os efeitos. O Lendário é o mais imponente da linha, mas
-continua fofo e kawaii — nada assustador.
+Evolução (anexos: `tigrin.png` + a forma anterior):
+
+```text
+The first attached image is the style reference. The second attached
+image is <forma anterior>, <uma frase sobre ela>. Create the evolution of
+<forma anterior>, as if it were the second stage of a Pokémon evolution
+line.
+
+Keep the Pokémon style: a cute creature design with simple readable
+shapes, clean outlines and bright cel shading, like official Pokémon art.
+Keep it synthetic: low detail, flat shading, clean bold shapes.
+Transparent background, and nothing else on the screen: no letters, no
+playing cards, no coins.
+
+It is an evolution, so it is a bit bigger, older and more confident than
+<forma anterior>, but still cute. Keep its <cores>, and the same art
+style.
+
+What is new in this evolution:
+- ...
+```
+
+Lendário: igual à evolução, trocando o pedido por *"Create its final
+evolution, the legendary last stage of this Pokémon evolution line"* e o
+parágrafo do porte por *"It is the final evolution, so it is bigger and
+more impressive than <forma anterior>, but still cute and friendly, never
+scary."*
 
 ---
 
 ## 1. Ovo Branco — linha Cósmica
 
 ### Tigrin · `tigrin` · Normal · Comum 🎨
-Filhote laranja listrado, com colete vermelho e dourado. Sprite pronto.
+Filhote laranja listrado, com colete vermelho e dourado. É a referência de
+estilo de todos os outros.
 
-### Estreliger · `estreliger` · Normal/Cósmico · Raro
-Conversa Cósmica · primeira mensagem (com o bloco de estilo)
+### Estreliger · `estreliger` · Normal/Cósmico · Raro 🎨
+Anexos: `tigrin.png` + `tigre-cosmico.png` (a forma do meio precisa ver as
+duas pontas).
 
 ```text
-Evolve the attached Tigrin into its middle stage, halfway to the attached
-"tigre-cosmico.png", which is its final form. Slightly bigger and more confident than Tigrin. Fur
-shifting from orange to deep navy at the paws and tail tip, stripes
-starting to glow gold like constellations, a few small gold four-pointed
-stars orbiting the body, a small star mark on the forehead, eyes with a
-star sparkle. Keeps a simpler version of the red-and-gold vest. Less
-cosmic than the final form: no planets, no galaxy tail yet.
+The first attached image is Tigrin, the first stage of a Pokémon
+evolution line. The second attached image is Tigre Cósmico, its final
+stage. Create the middle stage between them: the evolution of Tigrin
+that later becomes Tigre Cósmico.
+
+Keep the Pokémon style: a cute creature design with simple readable
+shapes, clean outlines and bright cel shading, like official Pokémon art.
+Keep it synthetic: low detail, flat shading, clean bold shapes.
+Transparent background, and nothing else on the screen: no letters, no
+playing cards, no coins.
+
+It is halfway between the two: a bit bigger and more confident than
+Tigrin, but clearly less cosmic than Tigre Cósmico. Same art style, same
+cute face and big ears.
+
+What is new in this evolution:
+- the orange fur starts turning deep navy blue at the paws, ears and
+  tail tip, like the night sky arriving
+- the dark stripes start to glow softly gold, like constellations
+- a small gold four-pointed star mark on the forehead
+- eyes with a small star sparkle
+- three or four small gold stars orbiting around the body
+- keeps a simpler version of Tigrin's red and gold vest
+- no planets and no galaxy tail yet: those come with the final form
 ```
 
 ### Tigre Cósmico · `tigre-cosmico` · Normal/Cósmico · Lendário 🎨
-Galáxia na cauda, planetas em órbita. Sprite pronto.
+Galáxia na cauda, planetas em órbita. Feito antes deste guia, a partir de
+uma versão verde-azulada do Tigrin (*"make it a cosmic version of it"*).
 
 ---
 
 ## 2. Ovo Vermelho — linha Fogo/Metálico
 
-### Brasinha · `brasinha` · Fogo · Comum
-Conversa Fogo · primeira mensagem (com o bloco de estilo)
+### Brasinha · `brasinha` · Fogo · Comum 🎨
+Anexo: `tigrin.png`
 
 ```text
-A fire-type variant of the attached Tigrin, same size and age (base
-form). Warm orange-amber fur with dark brown stripes, tail tip and ear
-tufts glowing like embers, a few tiny sparks floating around. No vest.
-Energetic, playful expression. Use orange and amber, not pure red.
+Create a fire version of the tiger in the attached image, as if it were a
+new Pokémon of the same evolution family.
+
+Keep everything else the same: same age and size, same pose, same art
+style. Keep the Pokémon style: a cute creature design with simple
+readable shapes, clean outlines and bright cel shading, like official
+Pokémon art. Keep it synthetic: low detail, flat shading, clean bold
+shapes. Transparent background, and nothing else on the screen: no
+letters, no playing cards, no coins.
+
+What changes in this fire version:
+- warm orange-amber fur with dark brown stripes
+- the tip of the tail and the ear tufts glow like burning embers
+- a few tiny sparks floating around the body
+- no vest
+- use orange and amber, not pure red, so it does not disappear on a red
+  background
 ```
 
-### Tigre-Fornalha · `tigre-fornalha` · Fogo/Metálico · Raro
-Conversa Fogo · depois do Brasinha
+### Tigre-Fornalha · `tigre-fornalha` · Fogo/Metálico · Raro 🎨
+Anexos: `tigrin.png` + `brasinha.png`
 
 ```text
-Take this last tiger (Brasinha) and evolve it into its middle stage. Bigger and sturdier.
-Wears armour of hot iron: riveted dark-grey plates on shoulders, chest
-and legs, the joints glowing orange from heat inside. A small chimney on
-its back puffing light smoke. Ember-tipped tail. Proud, cheerful
-expression.
+The first attached image is the style reference. The second attached
+image is Brasinha, a fire tiger. Create the evolution of Brasinha, as if
+it were the next stage of a Pokémon evolution line.
+
+Keep the Pokémon style: a cute creature design with simple readable
+shapes, clean outlines and bright cel shading, like official Pokémon art.
+Keep it synthetic: low detail, flat shading, clean bold shapes.
+Transparent background, and nothing else on the screen: no letters, no
+playing cards, no coins.
+
+It is an evolution, so it is a bit bigger, older and more confident than
+Brasinha, but still cute. Keep its orange-amber fur, dark brown stripes
+and ember glow, and the same art style.
+
+What is new in this evolution:
+- armor of hot iron: a few simple dark-grey plates with rivets on the
+  shoulders, chest and front legs
+- the gaps between the plates glow orange, like heat from inside
+- a small chimney on its back puffing a little light smoke
+- the tail tip burns with a bigger flame than Brasinha's
+- proud, cheerful expression
 ```
 
-### Mechatigre · `mechatigre` · Fogo/Metálico · Lendário
-Conversa Fogo · depois do Tigre-Fornalha
+### Mechatigre · `mechatigre` · Fogo/Metálico · Lendário 🎨
+Anexos: `tigrin.png` + `tigre-fornalha.png`
 
 ```text
-Take this last tiger (Tigre-Fornalha) and evolve it into its final, legendary form: a
-robot tiger of polished steel and gunmetal with gold trim, a visible
-glowing fire core in its chest, amber LED eyes, segmented mechanical
-tail with a flame at the tip, small jet flames from the paws. Still cute
-and friendly, chibi proportions, not menacing. The most impressive of
-the fire line.
+The first attached image is the style reference. The second attached
+image is Tigre-Fornalha, a fire tiger wearing hot iron armor. Create its
+final evolution, the legendary last stage of this Pokémon evolution line.
+
+Keep the Pokémon style: a cute creature design with simple readable
+shapes, clean outlines and bright cel shading, like official Pokémon art.
+Keep it synthetic: low detail, flat shading, clean bold shapes. It must
+be less busy than Tigre-Fornalha: fewer flames, bigger and simpler
+shapes. Transparent background, and nothing else on the screen: no
+letters, no playing cards, no coins.
+
+It is the final evolution, so it is bigger and more impressive than
+Tigre-Fornalha, but still cute and friendly, never scary. The iron armor
+has taken over completely: it is now a robot tiger.
+
+What is new in this evolution:
+- the whole body is made of polished steel and dark gunmetal plates with
+  gold trim, still shaped like the same cute tiger with big ears
+- a round glowing fire core visible in the middle of the chest
+- big glowing amber eyes, like LED lights, still cute and expressive
+- a segmented mechanical tail with a flame at the tip
+- small jet flames coming out of the paws, as if it is hovering
+- a few orange stripes painted on the metal, so it still reads as a tiger
 ```
 
 ---
 
 ## 3. Ovo Azul — linhas Água e Gelo
 
-### Gotigre · `gotigre` · Água · Comum
-Conversa Azul / Gelo · primeira mensagem (com o bloco de estilo)
+### Tigre d'Água · `tigre-dagua` · Água · Comum 🎨
+O inicial de água: pelagem verde-azulada, ondas na cauda e gotas
+flutuando. Feito antes deste guia, a partir do Tigrin (*"make the fur of
+this latest image green"* → *"slightly pulled towards blue"*).
+
+### Oceaniger · `oceaniger` · Água · Raro 🎨
+Anexos: `tigrin.png` + `tigre-dagua.png`
 
 ```text
-A water-type variant of the attached Tigrin, same size and age (base
-form). Light sky-blue fur with navy stripes, tail ending in the shape of
-a water drop, a couple of small bubbles around. No vest. Gentle, sweet
-expression. Simpler and younger than the attached "tigre-dagua.png",
-which is what it evolves into.
+The first attached image is the style reference. The second attached
+image is Tigre d'Água, a water tiger. Create the evolution of Tigre
+d'Água, as if it were the second stage of a Pokémon evolution line.
+
+Keep the Pokémon style: a cute creature design with simple readable
+shapes, clean outlines and bright cel shading, like official Pokémon art.
+Keep it synthetic: low detail, flat shading, clean bold shapes.
+Transparent background, and nothing else on the screen: no letters, no
+playing cards, no coins.
+
+It is an evolution, so it is a bit bigger, older and more confident than
+Tigre d'Água, but still cute. Keep its teal fur, dark stripes and blue
+paw pads, and the same art style.
+
+What is new in this evolution:
+- the fur is a deeper ocean teal-blue
+- a mane made of curling ocean waves around the head and neck
+- it holds a small golden trident in one paw
+- a fin-like crest along the back and a fin at the tail tip
+- fewer, bigger water splashes than Tigre d'Água, simpler shapes
+- confident, playful expression
 ```
 
-### Tigre d'Água · `tigre-dagua` · Água · Raro 🎨
-Pelagem verde-água, ondas na cauda e gotas flutuando. Sprite pronto.
-
-### Tigre-Leviatã · `tigre-leviata` · Água · Lendário
-Conversa Água · primeira mensagem (com o bloco de estilo, trocando
-"tigrin.png" por "tigre-dagua.png")
+### Tigre-Leviatã · `tigre-leviata` · Água · Lendário 🎨
+Anexos: `tigrin.png` + `oceaniger.png`
 
 ```text
-Evolve the attached Tigre d'Água into its final, legendary form: a sea
-dragon tiger. Long, slightly serpentine body, deep ocean-blue fur with
-teal stripes, fins on the elbows and a fin crest along the back, pearly
-scales on the chest, a long tail ending in a large fin, swirling ocean
-waves and droplets around. Majestic but still cute. The most impressive
-of the water line.
+The first attached image is the style reference. The second attached
+image is Oceaniger, a water tiger with a wave mane and a trident. Create
+its final evolution, the legendary last stage of this Pokémon evolution
+line.
+
+Keep the Pokémon style: a cute creature design with simple readable
+shapes, clean outlines and bright cel shading, like official Pokémon art.
+Keep it synthetic: low detail, flat shading, clean bold shapes.
+Transparent background, and nothing else on the screen: no letters, no
+playing cards, no coins.
+
+It is the final evolution, so it is bigger and more majestic than
+Oceaniger, but still cute and friendly, never scary. It becomes a sea
+dragon tiger.
+
+What is new in this evolution:
+- a longer, slightly serpentine body, like a sea dragon, with the same
+  cute tiger head and big ears
+- deep ocean-blue fur with teal stripes
+- large fins on the elbows and a fin crest running along the back
+- a few pearly scales on the chest
+- a long tail that ends in a big, flowing fin
+- the wave mane is now bigger and more regal, like a crown of water
+- no trident: its power is now its own body
+- a few big swirling waves around it, simple shapes, not busy
 ```
 
-### Neviger · `neviger` · Água/Gelo · Raro
-Conversa Azul / Gelo · depois do Gotigre
+### Neviger · `neviger` · Água/Gelo · Raro 🎨
+Anexos: `tigrin.png` + `tigre-dagua.png`
 
 ```text
-Take this last tiger (Gotigre) and evolve it into its ice middle stage. Bigger. The water
-in its body has frozen into armour of clear, faceted ice crystals on the
-shoulders, back and tail. White fur with pale icy-blue stripes, frosty
-breath puffing from the mouth, a few snowflakes around. Calm, confident
-expression.
+The first attached image is the style reference. The second attached
+image is Tigre d'Água, a water tiger. Create an ice evolution of Tigre
+d'Água, as if it were the second stage of a Pokémon evolution line where
+the water has frozen.
+
+Keep the Pokémon style: a cute creature design with simple readable
+shapes, clean outlines and bright cel shading, like official Pokémon art.
+Keep it synthetic: low detail, flat shading, clean bold shapes.
+Transparent background, and nothing else on the screen: no letters, no
+playing cards, no coins.
+
+It is an evolution, so it is a bit bigger, older and more confident than
+Tigre d'Água, but still cute. Same art style, same body shape and big
+ears.
+
+What is new in this evolution:
+- white fur with pale icy-blue stripes
+- the water around its body has frozen into armor of clear, faceted ice
+  crystals on the shoulders, back and tail
+- the tail tip is a big ice crystal
+- light-blue paw pads
+- a little puff of frosty breath coming out of its mouth
+- a few snowflakes floating around instead of water splashes
+- calm, confident expression
 ```
 
-### Tigre-Glacial · `tigre-glacial` · Água/Gelo · Lendário
-Conversa Azul / Gelo · depois do Neviger
+### Tigre-Glacial · `tigre-glacial` · Água/Gelo · Lendário 🎨
+Anexos: `tigrin.png` + `neviger.png`
 
 ```text
-Take this last tiger (Neviger) and evolve it into its final, legendary form: a large
-glacier tiger with a crown of icicles, thick white-and-silver fur, ice
-crystal armour on the chest and legs, frost spreading from its paws,
-snowflakes and ice shards swirling around. Regal and calm, still cute.
-The most impressive of the ice line.
+The first attached image is the style reference. The second attached
+image is Neviger, an ice tiger with crystal armor. Create its final
+evolution, the legendary last stage of this Pokémon evolution line.
+
+Keep the Pokémon style: a cute creature design with simple readable
+shapes, clean outlines and bright cel shading, like official Pokémon art.
+Keep it synthetic: low detail, flat shading, clean bold shapes.
+Transparent background, and nothing else on the screen: no letters, no
+playing cards, no coins.
+
+It is the final evolution, so it is bigger, more regal and more
+impressive than Neviger, but still cute and friendly, never scary. Same
+art style, same cute face and big ears.
+
+What is new in this evolution:
+- a crown of icicles on its head
+- thick, fluffy white and silver fur with pale icy-blue stripes, like a
+  majestic snow tiger
+- the ice crystal armor is bigger and covers the chest and legs, with a
+  few large clear crystals instead of many small ones
+- a long fluffy tail ending in a big ice crystal
+- frost spreading from its paws as it moves
+- a few snowflakes and ice shards swirling around, simple shapes, not
+  busy
+- calm, wise, proud expression
 ```
 
 ---
 
 ## 4. Ovo Verde — linha Grama
 
-### Folhiger · `folhiger` · Grama · Comum
-Conversa Grama · primeira mensagem (com o bloco de estilo)
+### Folhiger · `folhiger` · Grama · Comum 🎨
+Anexo: `tigrin.png`
 
 ```text
-A grass-type variant of the attached Tigrin, same size and age (base
-form). Light olive-green fur with dark green stripes, a mane of leaves
-around the head, a small sprout at the tail tip. No vest. Sunny, happy
-expression.
+Create a grass version of the tiger in the attached image, as if it were
+a new Pokémon of the same evolution family.
+
+Keep everything else the same: same age and size, same pose, same art
+style. Keep the Pokémon style: a cute creature design with simple
+readable shapes, clean outlines and bright cel shading, like official
+Pokémon art. Keep it synthetic: low detail, flat shading, clean bold
+shapes. Transparent background, and nothing else on the screen: no
+letters, no playing cards, no coins.
+
+What changes in this grass version:
+- light leaf-green fur with dark green stripes
+- a small mane of leaves around the head and neck
+- a little sprout with two leaves growing from the tail tip
+- light green paw pads
+- no vest
+- sunny, happy expression
 ```
 
-### Floriger · `floriger` · Grama/Fada · Raro
-Conversa Grama · depois do Folhiger
+### Floriger · `floriger` · Grama/Fada · Raro 🎨
+Anexos: `tigrin.png` + `folhiger.png`
 
 ```text
-Take this last tiger (Folhiger) and evolve it into its middle stage. Bigger and more
-graceful. Exotic flowers in pink, yellow and white bloom in its leafy
-mane, a flower at the tail tip, loose petals floating in the air around
-it. Joyful, gentle expression.
+The first attached image is the style reference. The second attached
+image is Folhiger, a grass tiger. Create the evolution of Folhiger, as if
+it were the second stage of a Pokémon evolution line.
+
+Keep the Pokémon style: a cute creature design with simple readable
+shapes, clean outlines and bright cel shading, like official Pokémon art.
+Keep it synthetic: low detail, flat shading, clean bold shapes.
+Transparent background, and nothing else on the screen: no letters, no
+playing cards, no coins.
+
+It is an evolution, so it is a bit bigger, older and more graceful than
+Folhiger, but still cute. Keep its leaf-green fur, dark green stripes and
+light green paw pads, and the same art style.
+
+What is new in this evolution:
+- the leaf mane is fuller, and a few big flowers in pink, yellow and
+  white bloom in it
+- the sprout on the tail tip has grown into one open flower
+- a few loose petals floating in the air around it
+- slightly longer, more elegant legs and tail
+- joyful, gentle expression
 ```
 
-### Tigre-Yggdrasil · `tigre-yggdrasil` · Grama/Fada · Lendário
-Conversa Grama · depois do Floriger
+### Tigre-Yggdrasil · `tigre-yggdrasil` · Grama/Fada · Lendário 🎨
+Anexos: `tigrin.png` + `floriger.png`
 
 ```text
-Take this last tiger (Floriger) and evolve it into its final, legendary form: a whole
-small tree grows from its back, with a glowing green canopy and tiny
-lights like fireflies, roots wrapping its paws, moss and flowers on its
-fur, bark-like patterns along the stripes. Ancient and wise but still
-cute. The most impressive of the grass line.
+The first attached image is the style reference. The second attached
+image is Floriger, a grass tiger with flowers in its leafy mane. Create
+its final evolution, the legendary last stage of this Pokémon evolution
+line.
+
+Keep the Pokémon style: a cute creature design with simple readable
+shapes, clean outlines and bright cel shading, like official Pokémon art.
+Keep it synthetic: low detail, flat shading, clean bold shapes.
+Transparent background, and nothing else on the screen: no letters, no
+playing cards, no coins.
+
+It is the final evolution, so it is bigger, wiser and more impressive
+than Floriger, but still cute and friendly, never scary. Same art style,
+same cute face and big ears, same leaf-green fur and dark green stripes.
+
+What is new in this evolution:
+- a small tree grows from its back, with a round, glowing green canopy
+- a few tiny glowing lights in the canopy, like fireflies
+- roots gently wrapping around its paws
+- a little moss and a few flowers on its shoulders, simpler than
+  Floriger's mane
+- the tail ends in a bigger leafy branch with one flower
+- calm, ancient, kind expression
 ```
 
 ---
@@ -298,8 +488,12 @@ Diferenças entre o catálogo e o jogo atual:
 
 - A linha cósmica (Tigrin → **Estreliger** → **Tigre Cósmico**) e o **Tigre
   d'Água** são novos e não aparecem no catálogo.
-- No jogo, o Tigre d'Água ocupa o lugar do Coraliger: o Tigre-Leviatã vem
-  dele e é do tipo Água (no catálogo, Água/Fada via Coraliger).
+- No jogo, o Ovo Azul choca o **Tigre d'Água** no lugar do Gotigre.
+- No jogo, o **Oceaniger** é a forma Raro (Nv. 16) da linha de água, e o
+  Tigre-Leviatã vem dele (no catálogo, o Oceaniger é um Épico do Nv. 36 e o
+  Leviatã vem do Coraliger).
+- No jogo, o Neviger vem do Tigre d'Água e pede Sabedoria ≥ 60% e Saúde ≥
+  60% (no catálogo, 70% e 80% a partir do Gotigre).
 - No jogo, as linhas sem ramificação evoluem direto; os requisitos de
   "Favorece" do Nv. 36 valem só para o catálogo.
 
@@ -443,7 +637,7 @@ da cauda e tufos das orelhas em brasa, com faíscas pequenas. Use laranja e
 
 ### 3. Ovo Azul — Tipo Água
 
-#### Gotigre · `gotigre` · Água · Comum · ✅ **no jogo**
+#### Gotigre · `gotigre` · Água · Comum
 **Base.** Um Tigrinho dócil, com cauda semelhante a uma gota d'água. Pelagem
 azul-clara e listras azul-marinho. O sprite antigo `tigrinho-1.webp` (Tigre
 d'Água) pode servir de referência.
@@ -470,7 +664,7 @@ d'Água) pode servir de referência.
 |---|---|---|---|
 | ✅ Tigre-Leviatã | `tigre-leviata` | Lendário | Saúde ou Saciedade |
 | Sereiger | `sereiger` | Épico | Felicidade |
-| Oceaniger | `oceaniger` | Épico | Sabedoria |
+| ✅ Oceaniger | `oceaniger` | Épico | Sabedoria |
 
 - **Tigre-Leviatã:** corpo serpentino e longo, com barbatanas e escamas
   azul-profundo. Parece um dragão marinho.
@@ -583,7 +777,7 @@ verde-oliva clara, com um broto na ponta da cauda.
 | Forma | No jogo | Sprite pronto |
 |---|---|---|
 | `tigrin` | ✅ | ✅ |
-| `estreliger` | ✅ |  |
+| `estreliger` | ✅ | ✅ |
 | `tigre-cosmico` | ✅ | ✅ |
 | `tigreluz` |  |  |
 | `mentetigre` |  |  |
@@ -597,11 +791,11 @@ verde-oliva clara, com um broto na ponta da cauda.
 | `tigre-abissal` |  |  |
 | `fantomiger` |  |  |
 | `gatuno-noturno` |  |  |
-| `brasinha` | ✅ |  |
-| `tigre-fornalha` | ✅ |  |
+| `brasinha` | ✅ | ✅ |
+| `tigre-fornalha` | ✅ | ✅ |
 | `chamatigre` |  |  |
 | `vulcaniger` |  |  |
-| `mechatigre` | ✅ |  |
+| `mechatigre` | ✅ | ✅ |
 | `tigre-tanque` |  |  |
 | `tigre-forja` |  |  |
 | `fenixger` |  |  |
@@ -610,25 +804,25 @@ verde-oliva clara, com um broto na ponta da cauda.
 | `tigre-terremoto` |  |  |
 | `magmatigreo` |  |  |
 | `tigre-meteoro` |  |  |
-| `gotigre` | ✅ |  |
+| `gotigre` |  |  |
 | `tigre-dagua` | ✅ | ✅ |
 | `coraliger` |  |  |
-| `neviger` | ✅ |  |
+| `neviger` | ✅ | ✅ |
 | `toxitigre` |  |  |
-| `tigre-leviata` | ✅ |  |
+| `tigre-leviata` | ✅ | ✅ |
 | `sereiger` |  |  |
-| `oceaniger` |  |  |
-| `tigre-glacial` | ✅ |  |
+| `oceaniger` | ✅ | ✅ |
+| `tigre-glacial` | ✅ | ✅ |
 | `tigre-nevasca` |  |  |
 | `cristaliger` |  |  |
 | `tigre-pantanoso` |  |  |
 | `poluiger` |  |  |
 | `tigre-acido` |  |  |
-| `folhiger` | ✅ |  |
-| `floriger` | ✅ |  |
+| `folhiger` | ✅ | ✅ |
+| `floriger` | ✅ | ✅ |
 | `troncotigre` |  |  |
 | `espinhiger` |  |  |
-| `tigre-yggdrasil` | ✅ |  |
+| `tigre-yggdrasil` | ✅ | ✅ |
 | `xamatiger` |  |  |
 | `primaveriger` |  |  |
 | `tigre-tita` |  |  |
@@ -638,4 +832,4 @@ verde-oliva clara, com um broto na ponta da cauda.
 | `tigre-venoso` |  |  |
 | `sombra-da-mata` |  |  |
 
-`python3 tools/sprites.py` imprime o que ainda falta entre as formas do jogo.
+Todas as formas do jogo têm sprite. `python3 tools/sprites.py` confere.

@@ -1,5 +1,5 @@
 import { ACTIONS, ACTION_ORDER, ICONS } from '../config.js';
-import { getState, progress, remainingToday, petName } from '../state.js';
+import { getState, progress, remainingToday, petName, level, canEvolve, evolve, devLevelUp } from '../state.js';
 import { openSheet } from './sheet.js';
 import { showEvolution } from './evolve.js';
 import { openInfo } from './info.js';
@@ -17,10 +17,22 @@ export function renderHome(host) {
   const nextLabel = h('div', { class: 'xpbar__next' });
 
   const art = h('img', { class: 'pet-art', alt: 'Seu tigrinho' });
-  const petStage = h('div', { class: 'pet-stage' },
+  // Ready to evolve: a glow in the line's colour hugs the pet (a blurred
+  // white copy of the sprite) and small stars rise around it.
+  const aura = h('img', { class: 'pet-aura', alt: '' });
+  const sparks = h('div', { class: 'pet-sparks' },
+    Array.from({ length: 7 }, (_, i) => h('span', {
+      class: 'pet-spark',
+      style: `left:${12 + ((i * 37) % 76)}%;top:${45 + ((i * 23) % 40)}%;animation-delay:${-(i * 0.47).toFixed(2)}s`,
+    })));
+
+  // Evolving is the player's call: once the XP is there, tapping the pet does it.
+  const petStage = h('div', { class: 'pet-stage', onclick: onPetTap },
     h('div', { class: 'pet-halo' }),
     h('div', { class: 'pet-ground' }),
-    art);
+    aura,
+    art,
+    sparks);
 
   const buttons = new Map();
   const actions = h('nav', { class: 'actions' },
@@ -39,12 +51,19 @@ export function renderHome(host) {
       return button;
     }));
 
+  // Dev only: ?dev in the URL shows a button that jumps one level.
+  const devBtn = new URLSearchParams(location.search).has('dev') && h('button', {
+    class: 'dev-lvl', type: 'button',
+    onclick: () => onLogged(devLevelUp()),
+  });
+
   const screen = h('div', { class: 'screen' },
     h('div', { class: 'hdr' }, stageName, xpLabel, infoBtn),
     h('div', { class: 'xpbar' }, fill),
     nextLabel,
     petStage,
-    actions);
+    actions,
+    devBtn);
 
   function update() {
     const state = getState();
@@ -53,13 +72,28 @@ export function renderHome(host) {
     stageName.textContent = petName();
     xpLabel.textContent = `${num(state.xp)} XP`;
     art.src = form.art;
-    art.style.setProperty('--pet-scale', form.scale);
+    aura.src = form.art;
+    petStage.style.setProperty('--pet-scale', form.scale);
+    petStage.style.setProperty('--aura', form.aura);
     petStage.dataset.form = form.id;
 
+    const ready = canEvolve();
+    petStage.dataset.ready = String(ready);
+    if (ready) {
+      petStage.setAttribute('role', 'button');
+      petStage.setAttribute('tabindex', '0');
+      petStage.setAttribute('aria-label', 'Evoluir o tigrinho');
+    } else {
+      for (const attr of ['role', 'tabindex', 'aria-label']) petStage.removeAttribute(attr);
+    }
+
+    if (devBtn) devBtn.textContent = `DEV +1 Nv (${level().level})`;
     fill.style.width = `${Math.round(ratio * 100)}%`;
-    nextLabel.textContent = next
-      ? `${num(into)} / ${num(span)} para evoluir (Nv. ${next})`
-      : 'Evolução máxima alcançada';
+    nextLabel.textContent = ready
+      ? 'Toque no tigrinho para evoluir!'
+      : next
+        ? `${num(into)} / ${num(span)} para evoluir (Nv. ${next})`
+        : 'Evolução máxima alcançada';
 
     for (const [type, { button, rate }] of buttons) {
       const cfg = ACTIONS[type];
@@ -73,12 +107,17 @@ export function renderHome(host) {
     update();
     if (result.gained > 0) toast(petStage, `+${result.gained} XP`);
     else if (result.cappedUnits > 0) toast(petStage, 'Registrado — sem XP hoje');
-
-    if (result.evolved) {
-      // Let the bar finish animating so the player sees what earned the evolution.
-      setTimeout(() => showEvolution(screen, result.evolved), 650);
-    }
   }
+
+  function onPetTap() {
+    const form = evolve();
+    if (!form) return;
+    update();
+    showEvolution(screen, form);
+  }
+  petStage.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ' ') && canEvolve()) { e.preventDefault(); onPetTap(); }
+  });
 
   update();
   host.append(screen);

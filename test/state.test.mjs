@@ -40,12 +40,12 @@ ok('over cap pays zero', S.logAction('steps', 5000).gained, 0);
 ok('xp after caps', S.getState().xp, 218);
 
 // --- level, derived from lifetime xp ---
-let lv = S.level();                                           // Nv 6 starts at 225, Nv 5 at 150
-ok('218xp is Nv 5', lv.level, 5);
-ok('xp into level', lv.into, 218 - 150);
-ok('level span', lv.span, 75);
-ok('Nv 16 starts at 1800', S.levelStart(16), 1800);
-ok('Nv 36 starts at 9450', S.levelStart(36), 9450);
+let lv = S.level();                                           // Nv 10 starts at 270, Nv 9 at 216
+ok('218xp is Nv 9', lv.level, 9);
+ok('xp into level', lv.into, 218 - 216);
+ok('level span', lv.span, 54);
+ok('Nv 16 starts at 720', S.levelStart(16), 720);
+ok('Nv 36 starts at 3780', S.levelStart(36), 3780);
 
 // --- status bars fill from this phase's earned xp only ---
 const st = Object.fromEntries(S.stats().map((s) => [s.id, s.value]));
@@ -54,7 +54,7 @@ ok('health = steps xp', st.health, 150);
 ok('happiness = photo xp', st.happiness, 10);
 ok('capped units add nothing', S.getState().phase.steps, 150);
 ok('meal feeds fullness', (S.logAction('meal', 2), S.stats().find((s) => s.id === 'fullness').value), 20);
-ok('health pct = 150 / (.35*1800)', S.stats().find((s) => s.id === 'health').pct, 24);
+ok('health pct = 150 / (.35*720)', S.stats().find((s) => s.id === 'health').pct, 60);
 
 // --- naming ---
 ok('unnamed pet uses form name', S.petName(), "Tigre d'Água");
@@ -92,21 +92,43 @@ ok('final forms have no branch', S.pickBranch('tigre-glacial', bars(0, 0, 0, 0))
 S.resetSave();
 S.chooseEgg('azul');
 const newDay = () => { S.getState().daily = { date: 'yesterday' }; };
-for (let day = 0; day < 4; day++) {
-  newDay();
-  S.logAction('book', 100);                                   // +150
-  S.logAction('course', 180);                                 // +120
-  S.logAction('steps', 15000);                                // +150
-}
-ok('1680xp is still Tigre d\'Água', S.currentForm().id, 'tigre-dagua');
-ok('prediction is Neviger', S.nextBranch().form.id, 'neviger');
 newDay();
-r = S.logAction('book', 100);
-ok('crossing Nv 16 evolves', r.evolved?.id, 'neviger');
+S.logAction('book', 100);                                     // +150
+S.logAction('course', 180);                                   // +120
+S.logAction('steps', 15000);                                  // +150
+newDay();
+S.logAction('steps', 3000);                                   // +30, health 180/252
+ok('450xp is still Tigre d\'Água', S.currentForm().id, 'tigre-dagua');
+ok('prediction is Neviger', S.nextBranch().form.id, 'neviger');
+ok('600xp is not ready yet', S.logAction('book', 100).ready, false);
+ok('tapping early does nothing', S.evolve(), null);
+r = S.logAction('course', 180);                               // 720 = Nv 16
+ok('crossing Nv 16 makes it ready', r.ready, true);
+ok('it waits for the tap', S.currentForm().id, 'tigre-dagua');
+ok('xp keeps counting while it waits', S.logAction('steps', 1000).gained, 10);
+ok('tap evolves it', S.evolve()?.id, 'neviger');
+ok('no longer ready after evolving', S.canEvolve(), false);
 ok('evolved form is Raro', S.currentForm().rarity, 'raro');
 ok('phase restarts', S.stats().every((s) => s.value === 0), true);
 ok('next evolution is Nv 36', S.progress().next, 36);
-ok('xp never drops', S.getState().xp, 1830);
+ok('xp never drops', S.getState().xp, 730);
+
+// --- dev level-up: exactly the XP to the next level ---
+S.resetSave();
+ok('dev does nothing without a pet', S.devLevelUp().gained, 0);
+S.chooseEgg('branco');
+ok('dev grants Nv 2 cost', S.devLevelUp().gained, 6);
+ok('dev lands on Nv 2', S.level(), { level: 2, into: 0, span: 12, ratio: 0 });
+let dev;
+for (let i = 0; i < 14; i++) dev = S.devLevelUp();
+ok('dev reaches Nv 16, ready, not evolved', [S.level().level, dev.ready, S.currentForm().id], [16, true, 'tigrin']);
+ok('dev feeds no status bar', S.stats().every((s) => s.value === 0), true);
+for (let i = 0; i < 20; i++) dev = S.devLevelUp();
+ok('Nv 36 while still base', [S.level().level, S.currentForm().id], [36, 'tigrin']);
+ok('first tap -> Estreliger', S.evolve()?.id, 'estreliger');
+ok('still ready for the next stage', S.canEvolve(), true);
+ok('second tap -> Tigre Cósmico', S.evolve()?.id, 'tigre-cosmico');
+ok('final form never ready', [S.canEvolve(), S.evolve()], [false, null]);
 
 // --- v1 saves migrate ---
 store.set('pet-tigrinho:save', JSON.stringify({ version: 1, pet: { egg: 'jade', name: 'Rex' }, xp: 500, stage: 1,

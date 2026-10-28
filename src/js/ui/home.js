@@ -1,5 +1,5 @@
 import { ACTIONS, ACTION_ORDER, ICONS } from '../config.js';
-import { getState, progress, remainingToday, petName, level, canEvolve, evolve, devLevelUp, trilhaToday } from '../state.js';
+import { getState, progress, remainingToday, doneToday, petName, level, canEvolve, evolve, devLevelUp, trilhaToday, currentForm } from '../state.js';
 import { openSheet } from './sheet.js';
 import { showEvolution } from './evolve.js';
 import { openInfo } from './info.js';
@@ -8,6 +8,8 @@ import { openTrilhas } from './trilhas.js';
 import { h, num } from './dom.js';
 import { iconArt, actionIcon } from './art.js';
 import { toast } from './toast.js';
+import { hearts, say, celebrateGain } from './petfx.js';
+import { createChatter } from '../chatter.js';
 
 export function renderHome(host) {
   const stageName = h('div', { class: 'hdr__stage display' });
@@ -21,6 +23,7 @@ export function renderHome(host) {
     onclick: () => openAchievements(screen, update),
   }, iconArt(ICONS.crown, 'hdr__crown-icon'));
   const fill = h('div', { class: 'xpbar__fill' });
+  const bar = h('div', { class: 'xpbar' }, fill);
   const nextLabel = h('div', { class: 'xpbar__next' });
 
   const art = h('img', { class: 'pet-art', alt: 'Seu tigrinho' });
@@ -33,8 +36,12 @@ export function renderHome(host) {
       style: `left:${12 + ((i * 37) % 76)}%;top:${45 + ((i * 23) % 40)}%;animation-delay:${-(i * 0.47).toFixed(2)}s`,
     })));
 
-  // Evolving is the player's call: once the XP is there, tapping the pet does it.
-  const petStage = h('div', { class: 'pet-stage', onclick: onPetTap },
+  // Tapping the pet pets it: hearts, and now and then a line. Evolution
+  // runs by itself once the XP is there (see autoEvolve).
+  const petStage = h('div', {
+    class: 'pet-stage', role: 'button', tabindex: '0', 'aria-label': 'Fazer carinho no tigrinho',
+    onclick: (e) => onPetTap({ x: e.clientX, y: e.clientY }),
+  },
     h('div', { class: 'pet-halo' }),
     h('div', { class: 'pet-ground' }),
     aura,
@@ -95,7 +102,7 @@ export function renderHome(host) {
       h('div', { class: 'hdr__name' }, stageName),
       crownBtn,
       h('div', { class: 'hdr__right' }, xpLabel, infoBtn)),
-    h('div', { class: 'xpbar' }, fill),
+    bar,
     nextLabel,
     h('div', { class: 'home-body' }, actions, petStage),
     trilhaBtn,
@@ -115,18 +122,12 @@ export function renderHome(host) {
 
     const ready = canEvolve();
     petStage.dataset.ready = String(ready);
-    if (ready) {
-      petStage.setAttribute('role', 'button');
-      petStage.setAttribute('tabindex', '0');
-      petStage.setAttribute('aria-label', 'Evoluir o tigrinho');
-    } else {
-      for (const attr of ['role', 'tabindex', 'aria-label']) petStage.removeAttribute(attr);
-    }
+    if (ready) autoEvolve();
 
     if (devBtn) devBtn.textContent = `DEV +1 Nv (${level().level})`;
     fill.style.width = `${Math.round(ratio * 100)}%`;
     nextLabel.textContent = ready
-      ? 'Toque no tigrinho para evoluir!'
+      ? 'Evoluindo…'
       : next
         ? `${num(into)} / ${num(span)} para evoluir (Nv. ${next})`
         : 'Evolução máxima alcançada';
@@ -151,20 +152,60 @@ export function renderHome(host) {
   }
 
   function onLogged(result) {
+    const before = fill.style.width;
     update();
-    if (result.gained > 0) toast(petStage, `+${result.gained} XP`);
+    if (result.gained > 0) celebrateGain(screen, petStage, bar, result.gained, before);
     else if (result.cappedUnits > 0) toast(petStage, 'Registrado — sem XP hoje');
   }
 
-  function onPetTap() {
-    const form = evolve();
-    if (!form) return;
-    update();
-    showEvolution(screen, form);
+  /**
+   * Reaching the evolution level evolves the pet by itself. The short wait
+   * lets the XP bar finish filling (and the gain celebration land) so the
+   * player sees what earned it. The branch is decided at that moment, from
+   * the status bars, by the same published rule as before.
+   */
+  let evolving = false;
+  function autoEvolve() {
+    if (evolving) return;
+    evolving = true;
+    setTimeout(() => {
+      if (!screen.isConnected) { evolving = false; return; }
+      const from = currentForm();
+      const form = evolve();
+      if (!form) { evolving = false; return; }
+      update();
+      showEvolution(screen, form, {
+        from,
+        onClose: () => { evolving = false; update(); },
+      });
+    }, 1300);
+  }
+
+  const chatter = createChatter();
+  function onPetTap(at) {
+    hearts(petStage, at);
+    const line = chatter.onTap();
+    if (line) say(petStage, line);
   }
   petStage.addEventListener('keydown', (e) => {
-    if ((e.key === 'Enter' || e.key === ' ') && canEvolve()) { e.preventDefault(); onPetTap(); }
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPetTap(); }
   });
+
+  // Now and then, while the home screen is open, the pet says something:
+  // mostly a gentle invitation to an action not done today. Spaced minutes
+  // apart and capped per visit; stops when the screen goes away.
+  function scheduleIdle() {
+    const delay = chatter.nextIdleDelay();
+    if (delay == null) return;
+    setTimeout(() => {
+      if (!screen.isConnected) return;
+      if (!evolving && !document.hidden && !screen.querySelector('.sheet, .evolve, .info')) {
+        say(petStage, chatter.onIdle(doneToday, remainingToday), 5200);
+      }
+      scheduleIdle();
+    }, delay);
+  }
+  scheduleIdle();
 
   update();
   host.append(screen);

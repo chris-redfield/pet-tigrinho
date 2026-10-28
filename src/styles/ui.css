@@ -135,7 +135,7 @@
  * around it. Calm loops of 2s+, no flashing. Try variations in the lab.
  */
 .pet-art, .pet-aura, .pet-sparks { grid-area: 1 / 1; }
-.pet-stage[data-ready="true"] { cursor: pointer; }
+.pet-stage { cursor: pointer; }
 
 .pet-aura {
   display: none;
@@ -198,7 +198,7 @@
   50%      { transform: translateY(calc(var(--u) * -1.2)); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pet-art, .pet-aura {
+  :root:not(.motion-full) .pet-art, :root:not(.motion-full) .pet-aura {
     animation: float-soft 6s ease-in-out infinite !important;
   }
 }
@@ -319,21 +319,49 @@
 /* ---------- egg screen ---------- */
 
 .egg-screen {
-  justify-content: center;
-  gap: calc(var(--u) * 7);
-  padding: calc(var(--u) * 6);
+  padding: calc(var(--u) * 10) 0 0;
   text-align: center;
 }
-.egg-title { font-size: calc(var(--u) * 7); margin: 0; }
-.egg-sub {
-  margin: calc(var(--u) * -4) 0 0;
-  font-size: calc(var(--u) * 3.2);
-  color: var(--c-ink-dim);
-}
-.egg-row {
+.egg-title { flex: 0 0 auto; font-size: calc(var(--u) * 8.5); margin: 0; }
+/* The 3D eggs fill everything under the title. */
+.egg-stage { position: relative; flex: 1 1 auto; min-height: 0; }
+.egg-canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: pointer; }
+.egg-stage--flat {
   display: flex;
+  align-items: center;
   justify-content: center;
   gap: calc(var(--u) * 3);
+  padding: 0 calc(var(--u) * 6);
+}
+
+/* The pet popping out of the burst shell. */
+.hatch-pet {
+  position: absolute;
+  z-index: 2;
+  height: auto;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 calc(var(--u) * 1.4) calc(var(--u) * 2) #2a060966);
+  pointer-events: none;
+  animation: hatch-pop .7s var(--ease-back) both;
+}
+@keyframes hatch-pop {
+  0%   { opacity: 0; transform: translate(-50%, -30%) scale(.2); }
+  60%  { opacity: 1; transform: translate(-50%, -58%) scale(1.12); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes hatch-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  :root:not(.motion-full) .hatch-pet { animation: hatch-fade .6s .2s ease-out both !important; }
+}
+
+/* Visually hidden, still read and focusable. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .egg {
   flex: 1 1 0;
@@ -343,15 +371,6 @@
   transition: transform .25s var(--ease-back), opacity .25s var(--ease);
 }
 .egg svg { width: 100%; height: auto; animation: egg-idle 3.6s var(--ease) infinite; }
-.egg__name {
-  display: block;
-  margin-top: calc(var(--u) * 1.5);
-  font-size: calc(var(--u) * 3);
-  color: var(--c-ink-dim);
-}
-.egg[aria-pressed="true"] { transform: translateY(calc(var(--u) * -1.5)) scale(1.1); }
-.egg[aria-pressed="true"] .egg__name { color: var(--c-gold-lit); font-weight: 700; }
-.egg-row[data-picked] .egg[aria-pressed="false"] { opacity: .4; }
 
 @keyframes egg-idle {
   0%, 92%, 100% { transform: rotate(0deg); }
@@ -500,28 +519,98 @@
   background: radial-gradient(circle at 50% 42%, var(--red-600) 0%, var(--red-950) 70%);
   animation: fade-in .3s var(--ease) both;
 }
-.evolve__art {
-  width: calc(var(--u) * var(--pet-scale, 66));
-  animation: evolve-in 1.1s var(--ease-back) both;
+/* Everything in the stage stacks in one cell, centred. */
+.evolve__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
 }
-/* A calm bloom, deliberately not a jackpot burst: no coins, no strobe. */
-.evolve__art::after { content: none; }
+.evolve__stage > * { grid-area: 1 / 1; }
+.evolve__art { width: calc(var(--u) * var(--pet-scale, 66)); }
+
+/* Charge: the old form alternates with a white silhouette, about twice a
+   second at most (WCAG 2.3.1 allows up to 3), and grows a little. */
+.evolve__art--old { animation: evo-charge 1.4s ease-in both; }
+@keyframes evo-charge {
+  0%, 22%   { filter: none; transform: scale(1); }
+  28%, 40%  { filter: brightness(0) invert(1); }
+  46%, 56%  { filter: none; }
+  62%, 72%  { filter: brightness(0) invert(1); }
+  77%, 82%  { filter: none; }
+  88%, 100% { filter: brightness(0) invert(1); transform: scale(1.12); }
+}
+.evolve[data-phase="charge"] .evolve__art--new,
+.evolve[data-phase="charge"] .evolve__name,
+.evolve[data-phase="charge"] .btn { visibility: hidden; }
+.evolve[data-phase="reveal"] .evolve__art--old { display: none; }
+
+/* Reveal: one soft bloom, the new form pops in with a small bounce. */
+.evolve__bloom {
+  width: calc(var(--u) * 70);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbe9 0%, #ffe9a8cc 30%, transparent 68%);
+  opacity: 0;
+  pointer-events: none;
+}
+.evolve[data-phase="reveal"] .evolve__bloom { animation: evo-bloom .9s var(--ease) both; }
+@keyframes evo-bloom {
+  0%   { opacity: 0; transform: scale(.3); }
+  25%  { opacity: 1; }
+  100% { opacity: 0; transform: scale(1.7); }
+}
+.evolve[data-phase="reveal"] .evolve__art--new { animation: evolve-in 1s var(--ease-back) both; }
 @keyframes evolve-in {
-  0%   { transform: scale(.6); opacity: 0; filter: brightness(4) blur(calc(var(--u) * 2)); }
-  55%  { filter: brightness(2.2) blur(0); }
-  100% { transform: scale(1); opacity: 1; filter: brightness(1); }
+  0%   { transform: scale(.5); opacity: 0; filter: brightness(3) blur(calc(var(--u) * 1.5)); }
+  45%  { transform: scale(1.1); opacity: 1; filter: brightness(1.6) blur(0); }
+  70%  { transform: scale(.96); }
+  100% { transform: scale(1); filter: brightness(1); }
 }
+
+/* Slow light rays behind the new form. */
+.evolve__rays {
+  width: calc(var(--u) * 120);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, #ffe9a826 0deg 9deg, transparent 9deg 24deg);
+  mask: radial-gradient(circle, #000 18%, transparent 62%);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 62%);
+  opacity: 0;
+  pointer-events: none;
+}
+.evolve[data-phase="reveal"] .evolve__rays {
+  animation: fade-in-full .8s .15s var(--ease) both, evo-spin 24s linear infinite;
+}
+@keyframes fade-in-full { from { opacity: 0; } to { opacity: 1; } }
+@keyframes evo-spin { to { rotate: 360deg; } }
+
+/* A ring of stars drifts out once. */
+.evolve__stars { position: relative; width: 0; height: 0; pointer-events: none; }
+.evolve__star {
+  position: absolute;
+  width: calc(var(--u) * 3);
+  aspect-ratio: 1;
+  margin: calc(var(--u) * -1.5);
+  background: var(--gold-300);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  opacity: 0;
+}
+.evolve[data-phase="reveal"] .evolve__star { animation: evo-star 1.2s .12s var(--ease) both; }
+@keyframes evo-star {
+  0%   { opacity: 0; transform: rotate(var(--a)) translateY(0) scale(.4); }
+  20%  { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateY(calc(var(--u) * var(--d) * -1)) scale(1); }
+}
+
 .evolve__kicker {
   font-size: calc(var(--u) * 3.4);
   color: var(--c-ink-dim);
-  animation: fade-in .5s .5s var(--ease) both;
+  animation: fade-in .5s var(--ease) both;
 }
-.evolve__name {
-  margin: 0;
-  font-size: calc(var(--u) * 8.5);
-  animation: fade-in .5s .7s var(--ease) both;
-}
-.evolve .btn { animation: fade-in .5s 1s var(--ease) both; }
+.evolve__name { margin: 0; font-size: calc(var(--u) * 8.5); }
+.evolve[data-phase="reveal"] .evolve__name { animation: evo-name .6s .45s var(--ease-back) both; }
+@keyframes evo-name { from { opacity: 0; transform: scale(.7); } }
+.evolve[data-phase="reveal"] .btn { animation: fade-in .5s 1s var(--ease) both; }
 
 /* ---------- toast ---------- */
 
@@ -747,23 +836,6 @@
 .info__hint { margin: calc(var(--u) * -1.5) 0 0; text-align: center; font-size: calc(var(--u) * 2.9); color: var(--c-ink-dim); }
 
 
-/* ---------- egg details ---------- */
-
-.egg__type {
-  display: block;
-  font-size: calc(var(--u) * 2.5);
-  color: var(--c-ink-dim);
-  opacity: .75;
-}
-.egg-detail {
-  margin: calc(var(--u) * -3) 0 0;
-  min-height: calc(var(--u) * 12);
-  font-size: calc(var(--u) * 3.1);
-  line-height: 1.4;
-  color: var(--c-ink-dim);
-}
-.egg-detail strong { color: var(--c-gold-lit); font-size: calc(var(--u) * 3.6); }
-
 /* ---------- evolution preview ---------- */
 
 .info__type { font-size: calc(var(--u) * 2.9); color: var(--c-ink-dim); margin-top: calc(var(--u) * -1); }
@@ -794,6 +866,87 @@
 .evo__need[data-ok="true"] { background: #2f8f6f40; color: var(--jade-200); }
 .evo__rule, .evo__done { margin: calc(var(--u) * 3) 0 0; font-size: calc(var(--u) * 2.6); line-height: 1.4; color: var(--c-ink-dim); }
 .evo__done { margin: 0; font-size: calc(var(--u) * 3.2); }
+
+/* An undiscovered form: pure black, with a faint gold rim so the shape
+   still reads on the dark red. */
+.silhouette {
+  filter: brightness(0) drop-shadow(0 0 calc(var(--u) * .8) #f5c24299) !important;
+}
+
+.evo__peek {
+  position: relative;
+  display: grid;
+  place-items: center;
+  margin: 0 auto calc(var(--u) * 3);
+  width: calc(var(--u) * 40);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--red-700) 0%, transparent 70%);
+}
+.evo__art { width: 80%; height: auto; }
+.evo__mark {
+  position: absolute;
+  top: 6%;
+  right: 8%;
+  display: grid;
+  place-items: center;
+  width: calc(var(--u) * 9);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: var(--edge) solid var(--gold-700);
+  background: var(--c-gold);
+  box-shadow: 0 calc(var(--press) * .7) 0 var(--gold-700);
+  color: var(--gold-ink);
+  font-size: calc(var(--u) * 5.4);
+  font-weight: 900;
+}
+
+/* ---------- new egg ---------- */
+
+.egg-new__text { margin: 0 0 calc(var(--u) * 3.4); font-size: calc(var(--u) * 3.2); line-height: 1.45; color: var(--c-ink-dim); }
+.egg-new .btn { width: 100%; }
+
+/* ---------- encyclopedia ---------- */
+
+.ency { z-index: 16; }
+.ency__total {
+  margin-left: auto;
+  padding: calc(var(--u) * .8) calc(var(--u) * 2.6);
+  border-radius: 999px;
+  background: var(--red-900);
+  font-size: calc(var(--u) * 2.8);
+  font-weight: 800;
+  color: var(--c-gold);
+  font-variant-numeric: tabular-nums;
+}
+.ency__line { padding: calc(var(--u) * 4); }
+.ency__head { display: flex; align-items: center; gap: calc(var(--u) * 2.4); margin-bottom: calc(var(--u) * 3); }
+.ency__egg { flex: 0 0 auto; width: calc(var(--u) * 7); }
+.ency__egg svg { display: block; width: 100%; height: auto; }
+.ency__title { margin: 0; }
+.ency__count { margin-left: auto; font-size: calc(var(--u) * 3); font-weight: 800; color: var(--c-ink-dim); font-variant-numeric: tabular-nums; }
+.ency__list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: calc(var(--u) * 2.4); }
+.ency__card {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 3);
+  padding: calc(var(--u) * 2.4);
+  border-radius: var(--r-md);
+  border: var(--edge) solid var(--red-600);
+  background: var(--red-800);
+}
+.ency__card[data-known="true"] { border-color: var(--c-gold-dim); }
+.ency__art {
+  flex: 0 0 auto;
+  width: calc(var(--u) * 20);
+  height: auto;
+  filter: drop-shadow(0 calc(var(--u) * .8) calc(var(--u) * 1) #2a060955);
+}
+.ency__info { display: flex; flex-direction: column; align-items: flex-start; gap: calc(var(--u) * 1); min-width: 0; }
+.ency__name { font-size: calc(var(--u) * 3.8); font-weight: 800; }
+.ency__name--unknown { letter-spacing: .2em; color: var(--c-ink-dim); }
+.ency__type { font-size: calc(var(--u) * 2.7); color: var(--c-ink-dim); }
+.ency__desc { margin: calc(var(--u) * .6) 0 0; font-size: calc(var(--u) * 2.7); line-height: 1.4; color: var(--c-ink-dim); }
 
 /* ---------- dev (?dev) ---------- */
 
@@ -1475,3 +1628,187 @@ button.tday__row:active { background: var(--red-800); }
 .hdr__info-icon { width: calc(var(--u) * 6.4); height: calc(var(--u) * 6.4); }
 .chip, .chat__input, .chat__send, .chat__mic { min-height: calc(var(--u) * 11.8); }
 .chat__send, .chat__mic { width: calc(var(--u) * 11.8); }
+
+/* ---------- pet reactions: hearts, speech, XP celebration ---------- */
+
+/* A tap squashes the pet a touch; an action that pays makes it hop. These
+   use `scale` / `translate`, so they stack on top of the idle float. */
+/* Petting: the pet sinks under the hand, leans into it (toward the tap,
+   --lean from JS), wiggles happily and glows warm for a moment. */
+.pet-art { transform-origin: 50% 85%; }
+.pet-stage--pet .pet-art { animation: float var(--float-time) ease-in-out infinite, pet-pat .9s var(--ease), pet-glow 1s ease-out; }
+@keyframes pet-pat {
+  0%   { scale: 1; rotate: 0deg; }
+  14%  { scale: 1.12 .86; rotate: 0deg; }
+  30%  { scale: .96 1.06; rotate: var(--lean, 4deg); }
+  48%  { scale: 1.03 .98; rotate: calc(var(--lean, 4deg) * -.7); }
+  66%  { scale: 1; rotate: calc(var(--lean, 4deg) * .45); }
+  84%  { rotate: calc(var(--lean, 4deg) * -.2); }
+  100% { scale: 1; rotate: 0deg; }
+}
+@keyframes pet-glow {
+  0%, 100% { filter: drop-shadow(0 calc(var(--u) * 1.6) calc(var(--u) * 2) #2a060944) drop-shadow(0 0 0 #ff9ec400); }
+  25%      { filter: drop-shadow(0 calc(var(--u) * 1.6) calc(var(--u) * 2) #2a060944) drop-shadow(0 0 calc(var(--u) * 3.5) #ff9ec4cc); }
+}
+.pet-stage--hop .pet-art { animation: float var(--float-time) ease-in-out infinite, pet-hop .7s var(--ease); }
+@keyframes pet-hop {
+  0%   { translate: 0 0; scale: 1; }
+  20%  { translate: 0 0; scale: 1.08 .9; }
+  50%  { translate: 0 calc(var(--u) * -7); scale: .95 1.06; }
+  80%  { translate: 0 0; scale: 1.05 .95; }
+  100% { translate: 0 0; scale: 1; }
+}
+
+.heart {
+  position: absolute;
+  z-index: 3;
+  width: var(--heart);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: heart-up 1.8s cubic-bezier(.2, .7, .3, 1) both;
+  filter: drop-shadow(0 calc(var(--u) * .6) 0 #5a0a0a66);
+}
+.heart--s { --heart: calc(var(--u) * 9); }
+.heart--m { --heart: calc(var(--u) * 13); }
+.heart--l { --heart: calc(var(--u) * 18); }
+/* Hearts start above the tap point, so the finger never hides them. */
+@keyframes heart-up {
+  0%   { opacity: 0; transform: translate(-50%, -120%) scale(.3); }
+  15%  { opacity: 1; transform: translate(-50%, -140%) scale(1.25); }
+  28%  { transform: translate(-50%, -150%) scale(1); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx) * var(--u)), calc(-150% - var(--u) * 42)) rotate(var(--rot)); }
+}
+
+/* Speech bubble above the pet, with a tail pointing down at it. */
+.bubble {
+  position: absolute;
+  z-index: 4;
+  top: 2%;
+  left: 50%;
+  max-width: calc(var(--u) * 62);
+  padding: calc(var(--u) * 2.4) calc(var(--u) * 3.6);
+  border: var(--edge) solid var(--gold-600);
+  border-radius: var(--r-md);
+  background: var(--c-ink);
+  box-shadow: 0 var(--press) 0 var(--red-950);
+  color: var(--red-900);
+  font-size: calc(var(--u) * 3.5);
+  font-weight: 800;
+  line-height: 1.3;
+  text-align: center;
+  transform: translateX(-50%);
+  transform-origin: 50% 100%;
+  pointer-events: none;
+  animation: bubble-in .35s var(--ease-back) both;
+}
+.bubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * -2.2);
+  width: calc(var(--u) * 3.6);
+  height: calc(var(--u) * 3.6);
+  background: var(--c-ink);
+  border-right: var(--edge) solid var(--gold-600);
+  border-bottom: var(--edge) solid var(--gold-600);
+  transform: translateX(-50%) rotate(45deg);
+}
+.bubble--out { animation: bubble-out .3s var(--ease) both; }
+@keyframes bubble-in { from { opacity: 0; transform: translateX(-50%) scale(.6); } }
+@keyframes bubble-out { to { opacity: 0; transform: translateX(-50%) scale(.85); } }
+
+/* The XP figure rises from the pet: one fixed number, never counting up. */
+.xp-float {
+  position: absolute;
+  z-index: 4;
+  top: 18%;
+  left: 50%;
+  color: var(--gold-300);
+  font-size: calc(var(--u) * 10);
+  font-weight: 900;
+  white-space: nowrap;
+  text-shadow: 0 calc(var(--u) * .8) 0 var(--red-950), 0 0 calc(var(--u) * 4) #f5c242aa;
+  -webkit-text-stroke: calc(var(--u) * .35) var(--red-900);
+  paint-order: stroke fill;
+  pointer-events: none;
+  animation: xp-float 2s var(--ease) both;
+}
+@keyframes xp-float {
+  0%   { opacity: 0; transform: translate(-50%, 0) scale(.4); }
+  15%  { opacity: 1; transform: translate(-50%, calc(var(--u) * -6)) scale(1.3); }
+  28%  { transform: translate(-50%, calc(var(--u) * -8)) scale(1); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, calc(var(--u) * -26)) scale(1); }
+}
+
+/* Golden orbs flying from the pet into the XP bar (driven from JS). */
+.xp-orb {
+  position: absolute;
+  z-index: 26;
+  width: calc(var(--u) * 4.6);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--gold-300);
+  box-shadow: 0 0 calc(var(--u) * 2.6) calc(var(--u) * .4) var(--gold-500);
+  pointer-events: none;
+}
+
+/* The bar answers when they land: a short glow, a bounce and a shine. */
+.xpbar--gain { animation: bar-gain .8s var(--ease-back); }
+@keyframes bar-gain {
+  0%   { box-shadow: 0 0 0 0 #f5c24200; scale: 1 1; }
+  30%  { box-shadow: 0 0 calc(var(--u) * 5) calc(var(--u) * 1.2) #f5c242cc; scale: 1.04 1.6; }
+  100% { box-shadow: 0 0 0 0 #f5c24200; scale: 1 1; }
+}
+.xpbar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(100deg, transparent 30%, #ffffff8c 50%, transparent 70%);
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.xpbar--gain::before { animation: bar-shine .9s .05s var(--ease); }
+@keyframes bar-shine { to { transform: translateX(120%); } }
+
+/* The fill waits at its old width until the gain lands, then grows in
+   view - slowly enough to watch, even with "reduce motion" on. */
+.xpbar--grow .xpbar__fill { transition: width 1.1s var(--ease) !important; transition-duration: 1.1s !important; }
+
+/* With "reduce motion" on, base.css stops every animation, which would
+   make hearts, bubbles and the XP figure vanish the instant they appear.
+   Each keeps a soft version instead: fades and short drifts only - no hop,
+   no spin, no orbs, no flicker. */
+@keyframes heart-soft {
+  0%   { opacity: 0; transform: translate(-50%, -150%) scale(.8); }
+  15%  { opacity: 1; transform: translate(-50%, -150%) scale(1); }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(calc(-50% + var(--dx) * var(--u) * .5), calc(-150% - var(--u) * 26)); }
+}
+@keyframes xp-soft {
+  0%   { opacity: 0; transform: translate(-50%, 0) scale(.85); }
+  15%  { opacity: 1; transform: translate(-50%, calc(var(--u) * -3)) scale(1); }
+  75%  { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, calc(var(--u) * -16)); }
+}
+@keyframes soft-out { to { opacity: 0; } }
+@keyframes pet-pat-soft { 20% { scale: 1.05 .95; } }
+@keyframes bar-glow {
+  30% { box-shadow: 0 0 calc(var(--u) * 5) calc(var(--u) * 1.2) #f5c242cc; }
+}
+@keyframes bloom-soft { 0% { opacity: 0; } 30% { opacity: .9; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  :root:not(.motion-full) .pet-stage--pet .pet-art { animation: float-soft 6s ease-in-out infinite, pet-pat-soft .6s ease-out, pet-glow 1s ease-out !important; }
+  :root:not(.motion-full) .heart { animation: heart-soft 1.8s ease-out both !important; }
+  :root:not(.motion-full) .bubble { animation: fade-in .3s ease-out both !important; }
+  :root:not(.motion-full) .bubble--out { animation: soft-out .3s ease-out both !important; }
+  :root:not(.motion-full) .xp-float { animation: xp-soft 2s ease-out both !important; }
+  :root:not(.motion-full) .xpbar--gain { animation: bar-glow 1s ease-out !important; }
+  :root:not(.motion-full) .xpbar--gain::before { animation: bar-shine .9s ease-out !important; }
+  :root:not(.motion-full) .evolve[data-phase="reveal"] .evolve__bloom { animation: bloom-soft 1s ease-out both !important; }
+  :root:not(.motion-full) .evolve[data-phase="reveal"] .evolve__art--new { animation: fade-in .7s .15s ease-out both !important; }
+  :root:not(.motion-full) .evolve[data-phase="reveal"] .evolve__name { animation: fade-in .5s .5s ease-out both !important; }
+  :root:not(.motion-full) .evolve[data-phase="reveal"] .btn { animation: fade-in .5s .9s ease-out both !important; }
+}

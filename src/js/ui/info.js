@@ -1,11 +1,16 @@
 import { ICONS, RARITIES, ACTIONS, STATS } from '../config.js';
-import { level, stats, petName, renamePet, currentForm, nextBranch, progress, canEvolve } from '../state.js';
+import { EVOLVE_AT } from '../forms.js';
+import {
+  level, stats, petName, renamePet, currentForm, nextBranch, progress, canEvolve,
+  discovered, canStartNewEgg, startNewEgg,
+} from '../state.js';
 import { h, num } from './dom.js';
 import { iconArt } from './art.js';
+import { openEncyclopedia } from './encyclopedia.js';
 
 /**
- * Pet info screen: name, level, rarity, status bars, the next evolution and
- * the encyclopedia.
+ * Pet info screen: name, level, rarity, status bars, the next evolution,
+ * the encyclopedia and, once the pet is in its final form, a new egg.
  *
  * The status bars have no "low" colour and no warning - an empty bar just
  * means that kind of action has not been logged this phase. The evolution
@@ -118,10 +123,18 @@ export function openInfo(host, onClose) {
     const label = Object.fromEntries(STATS.map((s) => [s.id, s.label]));
     const by = Object.fromEntries(bars.map((b) => [b.id, b]));
 
+    // The form it is heading for, as a black silhouette until it has been
+    // discovered: the name and the rule stay visible, only the look waits.
+    const known = discovered().has(branch.form.id);
+    const peek = h('div', { class: 'evo__peek' },
+      h('img', { class: `evo__art${known ? '' : ' silhouette'}`, src: branch.form.art, alt: '' }),
+      !known && h('span', { class: 'evo__mark', 'aria-hidden': 'true', text: '?' }));
+
     return h('section', { class: 'info__card panel' },
       h('h3', { class: 'info__heading', text: `Evolução no Nv. ${next}` }),
+      peek,
       h('p', { class: 'evo__now' },
-        canEvolve() ? 'Pronto! Toque no tigrinho para evoluir em: ' : 'Se evoluísse agora: ',
+        canEvolve() ? 'Pronto! Evoluindo para: ' : 'Se evoluísse agora: ',
         h('strong', { text: branch.form.name })),
       h('ul', { class: 'evo__list' },
         branch.options.map(({ form: option }) => {
@@ -143,18 +156,48 @@ export function openInfo(host, onClose) {
         text: 'Vence a rota em que seu status mais fraco passou mais do requisito. Se nenhuma for cumprida, vence a que chegou mais perto. Os status recomeçam a cada evolução.' }));
   }
 
-  // ---------- encyclopedia (locked for now) ----------
-
-  const hint = h('p', { class: 'info__hint', hidden: true, role: 'status',
-    text: 'A Enciclopédia chega numa próxima versão.' });
+  // ---------- encyclopedia ----------
 
   const encyclopedia = h('button', {
-    class: 'btn info__ency', type: 'button', 'aria-disabled': 'true',
-    onclick: () => { hint.hidden = false; },
+    class: 'btn info__ency', type: 'button',
+    onclick: () => openEncyclopedia(screen),
   },
-    iconArt(ICONS.lock, 'info__lock'),
+    iconArt(ICONS.book, 'info__lock'),
     h('span', { text: 'Enciclopédia' }),
-    h('small', { class: 'info__soon', text: 'em breve' }));
+    h('small', { class: 'info__soon', text: `${discovered().size} descobertos` }));
+
+  // ---------- new egg (opens at the final form) ----------
+
+  const finalLevel = EVOLVE_AT.at(-1);
+  const hint = h('p', { class: 'info__hint', hidden: true, role: 'status',
+    text: `Leve seu tigrinho até a forma final (Nv. ${finalLevel}) para chocar um novo ovo.` });
+
+  const newEgg = canStartNewEgg()
+    ? h('section', { class: 'info__card panel egg-new' },
+        h('h3', { class: 'info__heading', text: 'Novo ovo' }),
+        h('p', { class: 'egg-new__text',
+          text: `${petName()} chegou à forma final! Você pode chocar um novo ovo e criar outro bichinho desde o Nv. 1. Ele fica guardado na Enciclopédia, e suas conquistas continuam.` }),
+        h('button', { class: 'btn', type: 'button', text: 'Escolher novo ovo', onclick: confirmNewEgg }))
+    : h('button', {
+        class: 'btn info__ency', type: 'button', 'aria-disabled': 'true',
+        onclick: () => { hint.hidden = false; },
+      },
+        iconArt(ICONS.lock, 'info__lock'),
+        h('span', { text: 'Novo ovo' }),
+        h('small', { class: 'info__soon', text: `Nv. ${finalLevel}` }));
+
+  /** A second tap confirms: the current pet retires, so never by accident. */
+  function confirmNewEgg(e) {
+    const button = e.currentTarget;
+    if (button.dataset.confirm !== 'true') {
+      button.dataset.confirm = 'true';
+      button.textContent = 'Toque de novo para confirmar';
+      return;
+    }
+    if (!startNewEgg()) return;
+    screen.remove();
+    document.dispatchEvent(new CustomEvent('pet:new-egg'));
+  }
 
   // ---------- frame ----------
 
@@ -171,6 +214,7 @@ export function openInfo(host, onClose) {
       statusPanel,
       evolvePanel,
       encyclopedia,
+      newEgg,
       hint));
 
   host.append(screen);

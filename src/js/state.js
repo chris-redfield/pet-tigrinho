@@ -33,6 +33,8 @@ function blank() {
     history: {},          // 'YYYY-MM-DD' -> units per action + { xp, trilhas }
     trilhas: { done: [] },// [{ day, date }], oldest first
     log: [],
+    seen: [],             // form ids the player has had: the encyclopedia
+    retired: [],          // past pets, after a new egg: [{ egg, form, name, xp, at }]
   };
 }
 
@@ -43,19 +45,19 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (!raw) return blank();
     const parsed = JSON.parse(raw);
-    if (parsed.version === 1) return migrateV1(parsed);
+    if (parsed.version === 1) return seedSeen(migrateV1(parsed));
     // v2 knew no per-day history and no trilhas: the lifetime totals carry
     // over intact, "esta semana" simply starts empty on the next action.
     if (parsed.version !== 2 && parsed.version !== VERSION) return blank();
     const base = blank();
-    return retireForm({
+    return seedSeen(retireForm({
       ...base,
       ...parsed,
       version: VERSION,
       totals: { ...base.totals, ...parsed.totals },
       history: { ...base.history, ...parsed.history },
       trilhas: { ...base.trilhas, ...parsed.trilhas },
-    });
+    }));
   } catch {
     // Private mode, full quota, corrupt JSON - play anyway, just unsaved.
     return blank();
@@ -94,6 +96,23 @@ function retireForm(save) {
     id = BRANCHES[id][0].id;
   }
   return { ...save, form: id };
+}
+
+/**
+ * Saves from before the encyclopedia have no `seen` list. The pet passed
+ * through every form up its line, so those count as discovered - for the
+ * current pet and for any retired ones.
+ */
+function seedSeen(save) {
+  const seen = new Set(save.seen);
+  for (const id of [save.form, ...save.retired.map((p) => p.form)]) {
+    for (let f = FORMS[id]; f; f = FORMS[f.from]) seen.add(f.id);
+  }
+  return { ...save, seen: [...seen] };
+}
+
+function markSeen(id) {
+  if (!state.seen.includes(id)) state.seen.push(id);
 }
 
 function persist() {
@@ -174,8 +193,49 @@ export function chooseEgg(eggId) {
   state.pet = { egg: eggId, bornAt: new Date().toISOString() };
   state.form = egg.base;
   state.phase = zeroes();
+  markSeen(egg.base);
   persist();
   return state.pet;
+}
+
+/** Form ids the player has discovered, in any pet so far. */
+export function discovered() {
+  return new Set(state.seen);
+}
+
+/** Past pets, oldest first. */
+export function retiredPets() {
+  return state.retired;
+}
+
+/**
+ * A new egg opens once the pet has reached its final form (Nv 36). Not
+ * before: the game is about raising one pet, not collecting fast.
+ */
+export function canStartNewEgg() {
+  return Boolean(state.pet) && !phaseBounds().next;
+}
+
+/**
+ * Retires the current pet and goes back to the egg pick. The new pet starts
+ * at Nv 1. What the player did stays: totals, history, trilhas, medals and
+ * the encyclopedia carry over, and the retired pet's XP still counts in the
+ * lifetime total (see `activity`).
+ *
+ * @returns {boolean} false if the pet is not at its final form yet
+ */
+export function startNewEgg() {
+  if (!canStartNewEgg()) return false;
+  state.retired.push({
+    egg: state.pet.egg, form: state.form, name: state.pet.name || null,
+    xp: state.xp, at: new Date().toISOString(),
+  });
+  state.pet = null;
+  state.form = null;
+  state.xp = 0;
+  state.phase = zeroes();
+  persist();
+  return true;
 }
 
 export function currentForm() {
@@ -210,14 +270,19 @@ export function levelStart(n) {
   return (LEVEL_STEP * n * (n - 1)) / 2;
 }
 
-/** Current level and the XP into it, derived from lifetime XP. */
-export function level() {
+/** The level `xp` reaches, and the XP into it. */
+function levelAt(xp) {
   let n = 1;
-  while (levelStart(n + 1) <= state.xp) n += 1;
+  while (levelStart(n + 1) <= xp) n += 1;
   const start = levelStart(n);
   const span = levelStart(n + 1) - start;
-  const into = state.xp - start;
+  const into = xp - start;
   return { level: n, into, span, ratio: into / span };
+}
+
+/** The current pet's level and the XP into it, derived from its XP. */
+export function level() {
+  return levelAt(state.xp);
 }
 
 /**
@@ -308,7 +373,7 @@ export function remainingToday(type) {
  * XP is a flat rate per unit and is cut off at the daily cap - over the cap
  * the action is still logged to the player's totals, it just stops paying.
  * Reaching an evolution level does not evolve the pet: it makes it ready,
- * and the player taps the pet to evolve it (see `evolve`).
+ * and the home screen evolves it automatically (see `evolve`).
  *
  * @returns {{gained:number, paidUnits:number, cappedUnits:number, ready:boolean}}
  */
@@ -337,17 +402,17 @@ export function logAction(type, units) {
   return { gained, paidUnits, cappedUnits: units - paidUnits, ready: canEvolve() };
 }
 
-/** True once XP has reached the next evolution level; the pet waits for a tap. */
+/** True once XP has reached the next evolution level; the home screen then evolves it. */
 export function canEvolve() {
   const { next } = phaseBounds();
   return Boolean(state.pet && next && state.xp >= levelStart(next));
 }
 
 /**
- * The player tapped the pet: evolve it one stage, along the branch its
- * status bars point to right now, and start a new phase. Nothing pushes the
- * player to do this - the pet waits, and XP keeps counting meanwhile. If
- * XP already covers the stage after this one, the pet is ready again.
+ * The pet reached its level: evolve it one stage, along the branch its
+ * status bars point to right now, and start a new phase. The home screen
+ * calls this as soon as `canEvolve()` turns true. If XP already covers the
+ * stage after this one, the pet is ready again and evolves once more.
  *
  * @returns {object|null} the new form, or null if it was not ready
  */
@@ -356,6 +421,7 @@ export function evolve() {
   const form = nextBranch().form;
   state.form = form.id;
   state.phase = zeroes();
+  markSeen(form.id);
   persist();
   return form;
 }
@@ -401,7 +467,7 @@ export function activity(period = 'all') {
 
   if (period === 'all') {
     return {
-      xp: state.xp,
+      xp: state.xp + state.retired.reduce((sum, p) => sum + p.xp, 0),
       days: Object.values(state.history).filter(acted).length,
       trilhas: state.trilhas.done.length,
       units: { ...state.totals },
@@ -426,7 +492,8 @@ export function activity(period = 'all') {
 /** Every medal with the counter it watches and whether it is earned. */
 export function medals() {
   const all = activity('all');
-  const lv = level().level;
+  // The highest level any pet reached, so a new egg never takes a medal back.
+  const lv = Math.max(level().level, ...state.retired.map((p) => levelAt(p.xp).level));
   return MEDALS.map((medal) => {
     const value =
       medal.kind === 'units' ? all.units[medal.type] || 0

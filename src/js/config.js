@@ -126,7 +126,7 @@ export const STATS = [
   { id: 'health',    label: 'Saúde',      from: ['steps'],          share: 0.35 },
 ];
 
-/** Each egg shows its type and the form it hatches into before the pick. */
+/** Each egg always hatches the same form; its shell colour shows its type. */
 export const EGGS = [
   { id: 'branco',   name: 'Branco',   type: 'Normal', base: 'tigrin',   shell: '#efe6d2', band: '#f5c242', speck: '#b79a6a' },
   { id: 'vermelho', name: 'Vermelho', type: 'Fogo',   base: 'brasinha', shell: '#c7273a', band: '#f5c242', speck: '#ffe9a8' },

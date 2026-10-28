@@ -23,6 +23,12 @@ export const ICONS = {
   phone: 'M6.6 10.8a15.1 15.1 0 006.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1A17 17 0 013 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z',
   send: 'M3 20.4l18-8.4L3 3.6l.1 6.5L15 12 3.1 13.9z',
   mic: 'M12 2.8a3.2 3.2 0 013.2 3.2v6a3.2 3.2 0 01-6.4 0V6A3.2 3.2 0 0112 2.8zM6.4 11.2a.9.9 0 011.8 0 3.8 3.8 0 007.6 0 .9.9 0 011.8 0 5.6 5.6 0 01-4.7 5.5v2.5h2.5a.9.9 0 010 1.8H8.6a.9.9 0 010-1.8h2.5v-2.5a5.6 5.6 0 01-4.7-5.5z',
+  crown: 'M3.2 7.4l4.6 4.4L12 4.6l4.2 7.2 4.6-4.4-1.6 10.2H4.8L3.2 7.4zM4.4 19.6h15.2a.9.9 0 010 1.8H4.4a.9.9 0 010-1.8z',
+  fist: 'M4.6 11.6a1.8 1.8 0 013.6 0 1.8 1.8 0 013.6 0 1.8 1.8 0 013.6 0 1.8 1.8 0 013.6 0v3.8a5.4 5.4 0 01-5.4 5.4h-3.6a5.4 5.4 0 01-5.4-5.4v-3.8zM2.8 14.6h7.4a1.9 1.9 0 110 3.8H2.8a1.9 1.9 0 110-3.8z',
+  plus: 'M10.8 3.4h2.4v7.4h7.4v2.4h-7.4v7.4h-2.4v-7.4H3.4v-2.4h7.4V3.4z',
+  check: 'M20.3 5.4L22 7.1 9.2 19.9 2 12.7l1.7-1.7 5.5 5.5L20.3 5.4z',
+  star: 'M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9L12 2.6z',
+  bulb: 'M12 2.4a7 7 0 014.3 12.5c-.7.6-1.1 1.3-1.2 2.1l-.1.6H9l-.1-.6c-.1-.8-.5-1.5-1.2-2.1A7 7 0 0112 2.4zM9.2 19.4h5.6v1.1a1.7 1.7 0 01-1.7 1.7h-2.2a1.7 1.7 0 01-1.7-1.7v-1.1z',
 };
 
 /**
@@ -127,3 +133,10 @@ export const EGGS = [
   { id: 'azul',     name: 'Azul',     type: 'Água',   base: 'tigre-dagua', shell: '#2f6fb8', band: '#f5c242', speck: '#cfe6ff' },
   { id: 'verde',    name: 'Verde',    type: 'Grama',  base: 'folhiger', shell: '#2f8f6f', band: '#f5c242', speck: '#d6f5e4' },
 ];
+
+/**
+ * Which weekday a week starts on, for the "this week" column of the
+ * achievements screen: 0 Sunday, 1 Monday. Monday, so the week reads
+ * segunda a domingo like most Brazilian weekly goals.
+ */
+export const WEEK_STARTS_ON = 1;

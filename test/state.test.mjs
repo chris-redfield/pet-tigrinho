@@ -151,5 +151,50 @@ store.set('pet-tigrinho:save', JSON.stringify({ version: 2, pet: { egg: 'azul' }
   xp: 9500, phase: {}, totals: {}, daily: { date: 'x' }, log: [] }));
 ok('retired final -> Leviatã', (await import('../src/js/state.js?retired2')).currentForm().id, 'tigre-leviata');
 
+// --- achievements: lifetime and this week ---
+S.resetSave();
+S.chooseEgg('branco');
+S.logAction('photo', 2);
+S.logAction('book', 20);
+ok('week xp matches lifetime on day one', S.activity('week').xp, S.activity('all').xp);
+ok('week counts the units', S.activity('week').units.photo, 2);
+ok('one active day', [S.activity('all').days, S.activity('week').days], [1, 1]);
+ok('units over the cap still count as done', S.logAction('photo', 99).cappedUnits, 96);
+ok('capped units are on the record', S.activity('all').units.photo, 101);
+ok('capped units paid no xp', S.activity('all').xp, 80);  // 5 photos + 20 pages
+ok('medal earned by units', S.medals().find((m) => m.id === 'photo-50').done, true);
+ok('medal not yet earned', S.medals().find((m) => m.id === 'photo-10').value >= 10, true);
+ok('level medal still locked', S.medals().find((m) => m.id === 'lv-16').done, false);
+ok('no evolutions yet', S.evolutions(), 0);
+ok('week runs monday to today', S.weekDays().length <= 7, true);
+
+// --- trilhas: one per day, tasks read from what was logged ---
+S.resetSave();
+S.chooseEgg('branco');
+ok('starts on day 1', S.trilhaToday().day, 1);
+ok('day 1 is not ready', S.trilhaToday().ready, false);
+ok('cannot finish early', S.completeTrilha(), null);
+ok('path marks the current day', S.trilhaPath().find((n) => n.status === 'current').day, 1);
+S.logAction('photo', 1);
+ok('partial task shows progress', S.trilhaToday().tasks[0], { type: 'photo', units: 1, have: 1, done: true });
+ok('still waiting on the other task', S.trilhaToday().ready, false);
+S.logAction('meal', 1);
+ok('all tasks done', S.trilhaToday().ready, true);
+ok('finishing pays the flat bonus', S.completeTrilha().gained, 25);
+ok('bonus is on the record', S.activity('week').xp, 45);  // 10 + 10 + 25
+ok('the next day waits for tomorrow', [S.trilhaToday().day, S.trilhaToday().waiting], [2, true]);
+ok('cannot finish twice in a day', S.completeTrilha(), null);
+ok('day 1 reads as done', S.trilhaPath()[0].status, 'done');
+ok('trilha medal earned', S.medals().find((m) => m.id === 'trilha-1').done, true);
+ok('the path wraps past the list', S.trilhaPath(14).at(-1).day, 15);
+
+// --- v2 saves keep their totals and start an empty week ---
+store.set('pet-tigrinho:save', JSON.stringify({ version: 2, pet: { egg: 'branco' }, form: 'tigrin',
+  xp: 300, phase: {}, totals: { photo: 7, steps: 0, book: 0, course: 0, meal: 0 }, daily: { date: 'x' }, log: [] }));
+const v2 = await import('../src/js/state.js?v2');
+ok('v2 keeps lifetime units', v2.activity('all').units.photo, 7);
+ok('v2 has no week history yet', v2.activity('week').xp, 0);
+ok('v2 starts on trilha day 1', v2.trilhaToday().day, 1);
+
 console.log(failed ? `\n${failed} failing` : '\nall green');
 process.exit(failed ? 1 : 0);

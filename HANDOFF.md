@@ -10,8 +10,13 @@ Last commit at the time of writing: `a3a8499` on `feature/dev-chris`.
 
 - **Evolution tree:** cut from Erick's 52 forms to 5 lines / 14 forms. All
   14 have a sprite.
-- **Home screen:** icon buttons in a left column, drifting diamond floor,
-  tap the pet to evolve (aura + rising stars while it waits).
+- **Home screen:** the five action buttons are folded behind one *Tarefas*
+  icon on the left, drifting diamond floor, tap the pet to evolve (aura +
+  rising stars while it waits). Crown in the middle of the header opens
+  Conquistas; closed fist in the lower right opens Trilhas.
+- **Conquistas:** everything logged, Sempre / Esta semana, plus 20 medals.
+- **Trilhas:** one mission per day on a Duolingo-shaped path, each with a
+  few tasks and one small thing to read.
 - **Steps:** counted live from the accelerometer in the Passos sheet.
 - **Dev mode:** `?dev=1` shows a button that jumps one level.
 - **Deploy:** GitHub Pages, published from `main` →
@@ -49,6 +54,18 @@ These were discussed and settled; worth knowing before changing them.
   alternatives.
 - **Floor drift:** tile rounded to whole pixels and 4s per tile. Slower or
   fractional tiles looked janky (stepping, and a jump on every loop).
+- **Trilha tasks are not a new way to earn.** They are the same five
+  actions, read off the same daily counters, so a trilha cannot pay twice
+  for one walk. Only the completion bonus (`TRILHA_XP`, 25) is new, it is
+  printed on the card, and one trilha per calendar day caps it.
+- **No streak anywhere.** Trilhas look like Duolingo on purpose, but a
+  missed day costs nothing: the same trilha is still there tomorrow. The
+  design rules forbid anything the player can watch break.
+- **The week starts on Monday** (`WEEK_STARTS_ON` in `config.js`). Flip it
+  to 0 if the team prefers domingo–sábado; the label on the card says
+  *De segunda até hoje*, so change both.
+- **Conquistas opens on Sempre**, because the week column is empty for
+  anyone whose save predates the per-day history (v2).
 
 ## Open items
 
@@ -66,6 +83,12 @@ These were discussed and settled; worth knowing before changing them.
   SVGs until they are. Prompts below.
 
 ### Small fixes agreed for later
+
+- Trilha task targets are hand-written in `src/js/trilhas.js` and only the
+  first 12 days exist; day 13 wraps back to day 1's tasks under the label
+  *Dia 13*. Add days there when the team has more to say.
+- The "small thing" on each trilha is deliberately plain and non-clinical.
+  Worth a read-through by someone on the team before a demo.
 
 - `favicon.ico` 404 on Pages — add an icon.
 - `index.html` preloads `assets/pet/tigrin.webp`, which is wasted (and warns
@@ -138,6 +161,13 @@ The icon is: <ITEM>
 
 ## Gotchas
 
+- **`.tday` (the trilha day card) also carries the `.sheet` class** so it
+  reuses the bottom-sheet shell. That means `document.querySelector('.sheet
+  ...')` matches it as well as the log sheet — use `.sheet:not(.tday)` when
+  you mean the log sheet.
+- **A save's per-day `history` is what "esta semana" reads.** v2 saves have
+  none, so an old save shows an empty week until the next action. Lifetime
+  numbers come from `totals` and are complete either way.
 - **A new JS file must be committed with the change that imports it.** The
   app is plain ES modules: one missing import (a 404) stops the whole game
   from loading, not just that feature.

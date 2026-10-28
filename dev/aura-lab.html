@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aura Lab</title>
+<!--
+  Dev page: candidate "ready to evolve" animations, side by side, on the
+  game's background. Not part of the game. Open at /dev/aura-lab.html.
+
+  Design rule (README): calm, Pokémon-style - no strobe, no flashing win
+  frames. Keep every loop at ~1.5s or slower.
+-->
+<style>
+  :root {
+    --c-red-deep: #3d0a0e;
+    --c-red: #7d1016;
+    --c-gold: #f5c242;
+    --c-gold-lit: #ffe9a8;
+    --c-gold-dim: #9c6f22;
+    --c-ink: #fff6e2;
+    --c-ink-dim: #e0bd92;
+    --speed: 1;
+    --pet: 150px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 16px;
+    background: radial-gradient(circle at 50% 0%, var(--c-red) 0%, var(--c-red-deep) 70%) fixed;
+    color: var(--c-ink);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  header { max-width: 1200px; margin: 0 auto 8px; }
+  h1 { margin: 0 0 4px; color: var(--c-gold); font-size: 22px; }
+  p.lead { margin: 0 0 12px; color: var(--c-ink-dim); font-size: 14px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; font-size: 14px; }
+  .controls label { display: flex; gap: 6px; align-items: center; }
+  .controls input[type=range] { width: 120px; }
+
+  section {
+    max-width: 1200px;
+    margin: 16px auto;
+    padding: 12px 16px 16px;
+    border: 2px solid var(--c-gold-dim);
+    border-radius: 14px;
+    background: #2a06096b;
+  }
+  section h2 { margin: 0; font-size: 17px; color: var(--c-gold-lit); }
+  section h2 span { color: var(--c-gold); font-family: ui-monospace, monospace; margin-right: 6px; }
+  section p { margin: 2px 0 8px; color: var(--c-ink-dim); font-size: 13px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-around; }
+
+  /* ---------- a pet slot ---------- */
+  .pet {
+    position: relative;
+    width: calc(var(--pet) * 1.2);
+    height: calc(var(--pet) * 1.25);
+    display: grid;
+    place-items: center;
+    isolation: isolate;
+  }
+  .pet img { grid-area: 1 / 1; width: var(--pet); height: auto; display: block; }
+  .pet .base { position: relative; z-index: 2; animation: float calc(4.6s / var(--speed)) ease-in-out infinite; }
+  .pet .fx { grid-area: 1 / 1; pointer-events: none; }
+  .pet .name { position: absolute; bottom: -2px; left: 0; right: 0; text-align: center; font-size: 11px; color: var(--c-ink-dim); }
+  @keyframes float {
+    0%, 100% { transform: translateY(0) rotate(-.6deg); }
+    50%      { transform: translateY(-4px) rotate(.6deg); }
+  }
+
+  /* 0. none: what "not ready" looks like */
+
+  /* 1. Current game: warm halo + soft gold glow */
+  .v-current .fx {
+    width: calc(var(--pet) * 1.15); aspect-ratio: 1; border-radius: 50%;
+    background: radial-gradient(circle, #ffe7a8a0 0%, #ffd98b40 42%, transparent 68%);
+    animation: pulse calc(2.4s / var(--speed)) ease-in-out infinite;
+  }
+  .v-current .base { filter: drop-shadow(0 0 7px #ffe7a8c0); }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: .85; }
+    50%      { transform: scale(1.06); opacity: 1; }
+  }
+
+  /* 2. White breath: the whole pet slowly washes toward white and back */
+  .v-white .base { animation: float calc(4.6s / var(--speed)) ease-in-out infinite, white-breath calc(2.2s / var(--speed)) ease-in-out infinite; }
+  @keyframes white-breath {
+    0%, 100% { filter: brightness(1) drop-shadow(0 0 0 #fff0); }
+    50%      { filter: brightness(1.45) drop-shadow(0 0 10px #ffffffd0); }
+  }
+
+  /* 3. Silhouette: a white copy of the pet fades over it (Pokémon evolution look) */
+  .v-silhouette .ghost {
+    position: relative; z-index: 3;
+    filter: brightness(0) invert(1) drop-shadow(0 0 6px #fff);
+    opacity: 0;
+    animation: float calc(4.6s / var(--speed)) ease-in-out infinite, ghost calc(2.6s / var(--speed)) ease-in-out infinite;
+  }
+  @keyframes ghost {
+    0%, 100% { opacity: 0; }
+    50%      { opacity: .75; }
+  }
+
+  /* 4. Aura: soft coloured flame that hugs the outline and breathes */
+  .v-aura .ring {
+    position: relative; z-index: 1;
+    filter: brightness(0) invert(1) blur(6px) drop-shadow(0 0 8px var(--aura)) drop-shadow(0 0 16px var(--aura));
+    opacity: .9;
+    animation: float calc(4.6s / var(--speed)) ease-in-out infinite, aura calc(2s / var(--speed)) ease-in-out infinite;
+  }
+  @keyframes aura {
+    0%, 100% { transform: scale(1.04); opacity: .55; }
+    50%      { transform: scale(1.12); opacity: 1; }
+  }
+
+  /* 5. Ripples: rings of light expanding out of the pet */
+  .v-ripple .fx {
+    width: calc(var(--pet) * .7); aspect-ratio: 1; border-radius: 50%;
+    border: 3px solid var(--c-gold-lit);
+    box-shadow: 0 0 12px var(--c-gold), inset 0 0 12px var(--c-gold);
+    opacity: 0;
+    animation: ripple calc(2.4s / var(--speed)) ease-out infinite;
+  }
+  .v-ripple .fx.b { animation-delay: calc(-.8s / var(--speed)); }
+  .v-ripple .fx.c { animation-delay: calc(-1.6s / var(--speed)); }
+  @keyframes ripple {
+    0%   { transform: scale(.6); opacity: .9; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* 6. Rays: slow rotating light rays behind the pet */
+  .v-rays .fx {
+    width: calc(var(--pet) * 1.35); aspect-ratio: 1; border-radius: 50%;
+    background: repeating-conic-gradient(from 0deg, #ffe9a870 0deg 8deg, transparent 8deg 30deg);
+    -webkit-mask: radial-gradient(circle, #000 25%, transparent 70%);
+            mask: radial-gradient(circle, #000 25%, transparent 70%);
+    animation: spin calc(14s / var(--speed)) linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(1turn); } }
+
+  /* 7. Sparkles: small lights rising around the pet */
+  .v-sparkle .spark {
+    position: absolute; z-index: 3;
+    width: 8px; height: 8px;
+    background: var(--c-gold-lit);
+    clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+    filter: drop-shadow(0 0 4px #fff);
+    opacity: 0;
+    animation: rise calc(2.8s / var(--speed)) ease-out infinite;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) scale(.4); opacity: 0; }
+    25%  { opacity: 1; }
+    100% { transform: translateY(-70px) scale(1.1); opacity: 0; }
+  }
+
+  /* Combos stack the single effects above: each section gets one v-<effect>
+     class per effect it uses (see EFFECTS in the script). */
+
+  .paused * { animation-play-state: paused !important; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Aura Lab — pronto para evoluir</h1>
+  <p class="lead">Variações da animação de "pronto para evoluir", lado a lado, no fundo do jogo.
+    Página só de dev; nada aqui entra no jogo até escolhermos.</p>
+  <div class="controls">
+    <label>Velocidade <input id="speed" type="range" min="0.5" max="2" step="0.1" value="1"> <output id="speedOut">1×</output></label>
+    <label>Tamanho <input id="size" type="range" min="90" max="240" step="10" value="150"> <output id="sizeOut">150px</output></label>
+    <label><input id="pause" type="checkbox"> Pausar</label>
+  </div>
+</header>
+<main id="lab"></main>
+
+<script type="module">
+  import { SPRITES } from '../src/js/sprites.js';
+  import { FORMS } from '../src/js/forms.js';
+
+  // Aura colour per form comes from forms.js, same as the game.
+  const AURA = Object.fromEntries(Object.values(FORMS).map((f) => [f.id, f.aura]));
+
+  const VARIANTS = [
+    ['none', 'Sem efeito', 'Referência: o pet parado, não pronto.'],
+    ['current', 'Brilho dourado', 'Halo mais quente e brilho dourado suave (foi a primeira versão no jogo).'],
+    ['white', 'Respiração branca', 'O pet inteiro clareia devagar até quase branco e volta.'],
+    ['silhouette', 'Silhueta branca', 'Uma cópia branca do pet aparece e some por cima dele — o visual clássico de evolução Pokémon.'],
+    ['aura', 'Aura colorida', 'Uma chama suave na cor do elemento abraça o contorno e respira.'],
+    ['ripple', 'Ondas de luz', 'Anéis dourados saem do pet, um atrás do outro.'],
+    ['rays', 'Raios', 'Raios de luz girando devagar atrás do pet.'],
+    ['sparkle', 'Brilhos subindo', 'Pequenas estrelas sobem ao redor do pet.'],
+    ['combo', 'Combo', 'Aura colorida + brilhos subindo + respiração branca.'],
+    ['combo2', 'Combo 2 — no jogo', 'Aura colorida + brilhos subindo. É o que está no jogo (src/styles/ui.css, .pet-aura e .pet-spark).'],
+    ['combo3', 'Combo 3', 'Aura colorida + brilhos subindo + raios.'],
+  ];
+
+  // Which single effects each variant stacks.
+  const EFFECTS = {
+    combo: ['aura', 'sparkle', 'white'],
+    combo2: ['aura', 'sparkle'],
+    combo3: ['aura', 'sparkle', 'rays'],
+  };
+  const effectsOf = (key) => EFFECTS[key] || [key];
+
+  const h = (tag, props = {}, ...kids) => {
+    const n = Object.assign(document.createElement(tag), props);
+    n.append(...kids.flat());
+    return n;
+  };
+  const img = (id, cls) => h('img', { src: `../assets/pet/${id}.webp`, className: cls, alt: '' });
+
+  function sparks(n) {
+    return Array.from({ length: n }, (_, i) => {
+      const s = h('span', { className: 'spark' });
+      s.style.left = `${12 + ((i * 37) % 76)}%`;
+      s.style.top = `${45 + ((i * 23) % 40)}%`;
+      s.style.animationDelay = `calc(${-(i * 0.47).toFixed(2)}s / var(--speed))`;
+      return s;
+    });
+  }
+
+  function slot(id, variant) {
+    const fx = effectsOf(variant);
+    const pet = h('div', { className: 'pet' });
+    pet.style.setProperty('--aura', AURA[id] || '#ffe9a8');
+    const layers = [];
+    if (fx.includes('current') || fx.includes('rays')) layers.push(h('div', { className: 'fx' }));
+    if (fx.includes('ripple')) layers.push(...['a', 'b', 'c'].map((k) => h('div', { className: `fx ${k}` })));
+    if (fx.includes('aura')) layers.push(img(id, 'ring'));
+    layers.push(img(id, 'base'));
+    if (fx.includes('silhouette')) layers.push(img(id, 'ghost'));
+    if (fx.includes('sparkle')) layers.push(...sparks(7));
+    pet.append(...layers, h('div', { className: 'name', textContent: id }));
+    return pet;
+  }
+
+  const lab = document.getElementById('lab');
+  for (const [key, title, desc] of VARIANTS) {
+    lab.append(h('section', { className: effectsOf(key).map((e) => `v-${e}`).join(' ') },
+      h('h2', {}, h('span', { textContent: key }), title),
+      h('p', { textContent: desc }),
+      h('div', { className: 'row' }, SPRITES.map((id) => slot(id, key)))));
+  }
+
+  const root = document.documentElement;
+  const bind = (id, out, fmt, prop) => {
+    const input = document.getElementById(id);
+    const sync = () => { root.style.setProperty(prop, fmt.css(input.value)); document.getElementById(out).value = fmt.label(input.value); };
+    input.addEventListener('input', sync); sync();
+  };
+  bind('speed', 'speedOut', { css: (v) => v, label: (v) => `${v}×` }, '--speed');
+  bind('size', 'sizeOut', { css: (v) => `${v}px`, label: (v) => `${v}px` }, '--pet');
+  document.getElementById('pause').addEventListener('change', (e) => document.body.classList.toggle('paused', e.target.checked));
+</script>
+</body>
+</html>

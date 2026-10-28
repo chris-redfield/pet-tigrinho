@@ -68,13 +68,12 @@ export const ACTION_ORDER = ['photo', 'steps', 'book', 'course', 'meal'];
 
 /**
  * Rarity is a rank the pet *earns* by evolving, never something drawn.
- * Base forms are Comum, Nv 16 forms Raro, Nv 36 forms Épico or Lendário.
+ * Base forms are Comum, Nv 16 forms Raro, Nv 36 forms Lendário.
  * Each form names its tier in forms.js.
  */
 export const RARITIES = {
   comum:    { label: 'Comum',    color: '#e0bd92' },
   raro:     { label: 'Raro',     color: '#5cc7a2' },
-  epico:    { label: 'Épico',    color: '#c99bff' },
   lendario: { label: 'Lendário', color: '#f5c242' },
 };
 
@@ -82,11 +81,12 @@ export const RARITIES = {
  * Pet level, read straight off lifetime XP.
  *
  * Going from level L to L+1 costs L * LEVEL_STEP XP, so level L starts at
- * LEVEL_STEP * L(L-1)/2. With 15: Nv 16 (first evolution) at 1.800 XP and
- * Nv 36 (second) at 9.450 XP. A normal ~150 XP day puts those about two
- * weeks and two months in. Fixed and published like everything else.
+ * LEVEL_STEP * L(L-1)/2. With 6: Nv 16 (first evolution) at 720 XP and
+ * Nv 36 (second) at 3.780 XP. A normal ~150 XP day puts those about five
+ * days and three and a half weeks in. Fixed and published like everything
+ * else.
  */
-export const LEVEL_STEP = 15;
+export const LEVEL_STEP = 6;
 
 /**
  * Pet status bars.
@@ -100,8 +100,8 @@ export const LEVEL_STEP = 15;
  * bar starts over for the next evolution. No low-bar colour, no warning.
  *
  * The shares add up to more than 1 on purpose: you cannot max every bar in
- * one phase, so which bars you fill is a choice, and that choice picks the
- * branch the pet evolves into.
+ * one phase, so which bars you fill is a choice, and where a line branches
+ * that choice picks the form the pet evolves into.
  *
  *   from  - actions whose earned XP feeds this bar
  *   share - fraction of the phase span that fills the bar to 100%
@@ -117,6 +117,6 @@ export const STATS = [
 export const EGGS = [
   { id: 'branco',   name: 'Branco',   type: 'Normal', base: 'tigrin',   shell: '#efe6d2', band: '#f5c242', speck: '#b79a6a' },
   { id: 'vermelho', name: 'Vermelho', type: 'Fogo',   base: 'brasinha', shell: '#c7273a', band: '#f5c242', speck: '#ffe9a8' },
-  { id: 'azul',     name: 'Azul',     type: 'Água',   base: 'gotigre',  shell: '#2f6fb8', band: '#f5c242', speck: '#cfe6ff' },
+  { id: 'azul',     name: 'Azul',     type: 'Água',   base: 'tigre-dagua', shell: '#2f6fb8', band: '#f5c242', speck: '#cfe6ff' },
   { id: 'verde',    name: 'Verde',    type: 'Grama',  base: 'folhiger', shell: '#2f8f6f', band: '#f5c242', speck: '#d6f5e4' },
 ];

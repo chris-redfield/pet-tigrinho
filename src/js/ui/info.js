@@ -1,5 +1,5 @@
 import { ICONS, RARITIES, ACTIONS, STATS } from '../config.js';
-import { level, stats, petName, renamePet, currentForm, nextBranch, progress } from '../state.js';
+import { level, stats, petName, renamePet, currentForm, nextBranch, progress, canEvolve } from '../state.js';
 import { h, num } from './dom.js';
 import { iconArt } from './art.js';
 
@@ -121,7 +121,7 @@ export function openInfo(host, onClose) {
     return h('section', { class: 'info__card panel' },
       h('h3', { class: 'info__heading', text: `Evolução no Nv. ${next}` }),
       h('p', { class: 'evo__now' },
-        'Se evoluísse agora: ',
+        canEvolve() ? 'Pronto! Toque no tigrinho para evoluir em: ' : 'Se evoluísse agora: ',
         h('strong', { text: branch.form.name })),
       h('ul', { class: 'evo__list' },
         branch.options.map(({ form: option }) => {
@@ -130,7 +130,7 @@ export function openInfo(host, onClose) {
             ? Object.entries(option.needs).map(([id, min]) => ({
                 text: `${label[id]} ≥ ${min}%`, ok: by[id].raw >= min,
               }))
-            : [{ text: `maior status: ${option.favors.map((id) => label[id]).join(' ou ')}`, ok: option === branch.form }];
+            : [{ text: 'evolução direta', ok: true }];
           return h('li', { class: 'evo', dataset: { picked: String(option === branch.form) } },
             h('div', { class: 'evo__top' },
               h('span', { class: 'evo__name', text: option.name }),
@@ -139,8 +139,8 @@ export function openInfo(host, onClose) {
             h('div', { class: 'evo__needs' },
               rule.map((r) => h('span', { class: 'evo__need', dataset: { ok: String(r.ok) }, text: r.text }))));
         })),
-      h('p', { class: 'evo__rule',
-        text: 'Vale a rota mais exigente que você cumprir. Se nenhuma for cumprida, vale a que chegou mais perto. Os status recomeçam a cada evolução.' }));
+      branch.options.length > 1 && h('p', { class: 'evo__rule',
+        text: 'Vence a rota em que seu status mais fraco passou mais do requisito. Se nenhuma for cumprida, vence a que chegou mais perto. Os status recomeçam a cada evolução.' }));
   }
 
   // ---------- encyclopedia (locked for now) ----------

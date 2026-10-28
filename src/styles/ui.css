@@ -101,6 +101,55 @@
   background: radial-gradient(ellipse, #2a060955 0%, transparent 70%);
 }
 
+/*
+ * Ready to evolve ("combo 2" in dev/aura-lab.html): a glow in the line's
+ * colour (--aura, from forms.js) hugging the pet, plus small stars rising
+ * around it. Calm loops of 2s+, no flashing. Try variations in the lab.
+ */
+.pet-art, .pet-aura, .pet-sparks { grid-area: 1 / 1; }
+.pet-stage[data-ready="true"] { cursor: pointer; }
+
+.pet-aura {
+  display: none;
+  position: relative;
+  width: calc(var(--u) * var(--pet-scale, 62));
+  height: auto;
+  filter: brightness(0) invert(1) blur(calc(var(--u) * 1.5))
+          drop-shadow(0 0 calc(var(--u) * 2) var(--aura, #ffe9a8))
+          drop-shadow(0 0 calc(var(--u) * 4) var(--aura, #ffe9a8));
+  animation: float 4.6s var(--ease) infinite, aura 2s var(--ease) infinite;
+}
+.pet-stage[data-ready="true"] .pet-aura { display: block; }
+@keyframes aura {
+  0%, 100% { scale: 1.04; opacity: .55; }
+  50%      { scale: 1.12; opacity: 1; }
+}
+
+.pet-sparks {
+  display: none;
+  position: relative;
+  z-index: 1;
+  width: calc(var(--u) * var(--pet-scale, 62));
+  aspect-ratio: 1;
+  pointer-events: none;
+}
+.pet-stage[data-ready="true"] .pet-sparks { display: block; }
+.pet-spark {
+  position: absolute;
+  width: calc(var(--u) * 2.2);
+  aspect-ratio: 1;
+  background: var(--c-gold-lit);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  filter: drop-shadow(0 0 calc(var(--u) * 1) #fff);
+  opacity: 0;
+  animation: spark-rise 2.8s ease-out infinite;
+}
+@keyframes spark-rise {
+  0%   { transform: translateY(0) scale(.4); opacity: 0; }
+  25%  { opacity: 1; }
+  100% { transform: translateY(calc(var(--u) * -18)) scale(1.1); opacity: 0; }
+}
+
 @keyframes float {
   0%, 100% { transform: translateY(0)                      rotate(-.6deg); }
   50%      { transform: translateY(calc(var(--u) * -2.2))  rotate(.6deg); }
@@ -609,3 +658,19 @@
 .evo__need[data-ok="true"] { background: #2f8f6f40; color: #a6ecd0; }
 .evo__rule, .evo__done { margin: calc(var(--u) * 3) 0 0; font-size: calc(var(--u) * 2.6); line-height: 1.4; color: var(--c-ink-dim); }
 .evo__done { margin: 0; font-size: calc(var(--u) * 3.2); }
+
+/* ---------- dev (?dev) ---------- */
+
+.dev-lvl {
+  position: absolute;
+  left: calc(var(--u) * 3);
+  top: calc(var(--u) * 26);
+  z-index: 20;
+  padding: calc(var(--u) * 1.6) calc(var(--u) * 3);
+  border-radius: calc(var(--u) * 1.5);
+  border: calc(var(--u) * .3) dashed #6f6;
+  background: #000c;
+  color: #6f6;
+  font: 700 calc(var(--u) * 3)/1 ui-monospace, monospace;
+}
+.dev-lvl:active { background: #030; }

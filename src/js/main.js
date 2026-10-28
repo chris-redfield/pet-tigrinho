@@ -4,6 +4,7 @@ import { renderEgg } from './ui/egg.js';
 import { renderHome } from './ui/home.js';
 import { renderFinance } from './ui/finance.js';
 import { renderTabbar } from './ui/tabbar.js';
+import { renderHelp } from './ui/help.js';
 
 /** Kills the browser gestures that break a fullscreen game. */
 function lockGestures() {
@@ -43,7 +44,7 @@ function initDebugHud() {
 
 const screens = () => document.getElementById('screens');
 
-const TABS = { pet: renderHome, financas: renderFinance };
+const TABS = { pet: renderHome, financas: renderFinance, ajuda: renderHelp };
 let tab = 'pet';
 let tabbar = null;
 

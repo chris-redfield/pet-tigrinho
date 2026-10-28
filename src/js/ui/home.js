@@ -1,11 +1,13 @@
 import { ACTIONS, ACTION_ORDER, ICONS } from '../config.js';
-import { getState, progress, remainingToday, petName, level, canEvolve, evolve, devLevelUp } from '../state.js';
+import { getState, progress, remainingToday, petName, level, canEvolve, evolve, devLevelUp, trilhaToday } from '../state.js';
 import { openSheet } from './sheet.js';
 import { showEvolution } from './evolve.js';
 import { openInfo } from './info.js';
-import { ICON_ART } from '../sprites.js';
+import { openAchievements } from './achievements.js';
+import { openTrilhas } from './trilhas.js';
 import { h, num } from './dom.js';
-import { iconArt } from './art.js';
+import { iconArt, actionIcon } from './art.js';
+import { toast } from './toast.js';
 
 export function renderHome(host) {
   const stageName = h('div', { class: 'hdr__stage display' });
@@ -14,6 +16,10 @@ export function renderHome(host) {
     class: 'hdr__info', type: 'button', 'aria-label': 'Informações do pet',
     onclick: () => openInfo(screen, update),
   }, iconArt(ICONS.info, 'hdr__info-icon'));
+  const crownBtn = h('button', {
+    class: 'hdr__crown', type: 'button', 'aria-label': 'Conquistas',
+    onclick: () => openAchievements(screen, update),
+  }, iconArt(ICONS.crown, 'hdr__crown-icon'));
   const fill = h('div', { class: 'xpbar__fill' });
   const nextLabel = h('div', { class: 'xpbar__next' });
 
@@ -35,23 +41,38 @@ export function renderHome(host) {
     art,
     sparks);
 
-  // Square icon buttons in a column beside the pet. The name lives in the
-  // aria-label; the XP stays on the face of every button, because the
-  // player must always see what an action pays before doing it.
+  // Square icon buttons in a column beside the pet, folded behind one icon
+  // so the pet gets the screen until the player asks for them. The name
+  // lives in the aria-label; the XP stays on the face of every button,
+  // because the player must always see what an action pays before acting.
   const buttons = new Map();
-  const actions = h('nav', { class: 'actions', 'aria-label': 'Registrar atividade' },
-    ACTION_ORDER.map((type) => {
+  const list = h('div', { class: 'actions__list', id: 'actions-list' },
+    ACTION_ORDER.map((type, i) => {
       const rate = h('div', { class: 'act__rate' });
-      const icon = ICON_ART.includes(type)
-        ? h('img', { class: 'act__icon act__icon--art', src: `assets/icons/${type}.webp`, alt: '' })
-        : iconArt(ICONS[type], 'act__icon');
       const button = h('button', {
-        class: 'act panel', type: 'button',
+        class: 'act panel', type: 'button', style: `--i:${i}`,
         onclick: () => openSheet(screen, type, onLogged),
-      }, icon, rate);
+      }, actionIcon(type, 'act__icon'), rate);
       buttons.set(type, { button, rate });
       return button;
     }));
+
+  const toggle = h('button', {
+    class: 'actions__toggle panel', type: 'button', 'aria-expanded': 'false',
+    'aria-controls': 'actions-list',
+    onclick: () => setOpen(actions.dataset.open !== 'true'),
+  },
+    iconArt(ICONS.plus, 'actions__toggle-icon'),
+    h('span', { class: 'actions__toggle-label', text: 'Tarefas' }));
+
+  const actions = h('nav', { class: 'actions', 'aria-label': 'Registrar atividade',
+    dataset: { open: 'false' } }, toggle, list);
+
+  function setOpen(open) {
+    actions.dataset.open = String(open);
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Fechar as tarefas' : 'Abrir as tarefas');
+  }
 
   // Dev only: ?dev in the URL shows a button that jumps one level.
   const devBtn = new URLSearchParams(location.search).has('dev') && h('button', {
@@ -59,11 +80,25 @@ export function renderHome(host) {
     onclick: () => onLogged(devLevelUp()),
   });
 
+  // Lower right: the way into the trilhas, a closed hand facing forward.
+  const trilhaBadge = h('span', { class: 'fab__badge' });
+  const trilhaBtn = h('button', {
+    class: 'fab', type: 'button', 'aria-label': 'Trilhas',
+    onclick: () => openTrilhas(screen, { onChange: update, onClose: update }),
+  },
+    iconArt(ICONS.fist, 'fab__icon'),
+    trilhaBadge,
+    h('span', { class: 'fab__label', text: 'Trilhas' }));
+
   const screen = h('div', { class: 'screen' },
-    h('div', { class: 'hdr' }, stageName, xpLabel, infoBtn),
+    h('div', { class: 'hdr' },
+      h('div', { class: 'hdr__name' }, stageName),
+      crownBtn,
+      h('div', { class: 'hdr__right' }, xpLabel, infoBtn)),
     h('div', { class: 'xpbar' }, fill),
     nextLabel,
     h('div', { class: 'home-body' }, actions, petStage),
+    trilhaBtn,
     devBtn);
 
   function update() {
@@ -96,6 +131,14 @@ export function renderHome(host) {
         ? `${num(into)} / ${num(span)} para evoluir (Nv. ${next})`
         : 'Evolução máxima alcançada';
 
+    const trilha = trilhaToday();
+    const ticked = trilha.tasks.filter((task) => task.done).length;
+    trilhaBadge.textContent = trilha.waiting ? '✓' : `${ticked}/${trilha.tasks.length}`;
+    trilhaBadge.dataset.done = String(trilha.waiting || trilha.ready);
+    trilhaBtn.setAttribute('aria-label', trilha.waiting
+      ? `Trilhas: Dia ${trilha.day - 1} concluído`
+      : `Trilhas: Dia ${trilha.day}, ${ticked} de ${trilha.tasks.length} tarefas`);
+
     for (const [type, { button, rate }] of buttons) {
       const cfg = ACTIONS[type];
       const left = remainingToday(type);
@@ -126,13 +169,4 @@ export function renderHome(host) {
   update();
   host.append(screen);
   return { update };
-}
-
-let toastTimer;
-function toast(host, text) {
-  host.querySelector('.toast')?.remove();
-  const node = h('div', { class: 'toast', text });
-  host.append(node);
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => node.remove(), 1900);
 }

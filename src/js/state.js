@@ -1,14 +1,22 @@
-import { ACTIONS, ACTION_ORDER, EGGS, LEVEL_STEP, STATS } from './config.js';
+import { ACTIONS, ACTION_ORDER, EGGS, LEVEL_STEP, STATS, WEEK_STARTS_ON } from './config.js';
 import { FORMS, BRANCHES, EVOLVE_AT } from './forms.js';
+import { TRILHA_XP, trilhaFor } from './trilhas.js';
+import { MEDALS } from './medals.js';
 
 const KEY = 'pet-tigrinho:save';
-const VERSION = 2;
+const VERSION = 3;
+
+/** How many days of per-day history to keep. Older days drop off the record. */
+const HISTORY_DAYS = 400;
 
 /** Local calendar day, not UTC - the cap should roll over at the player's midnight. */
-function today() {
-  const d = new Date();
+function dateKey(d) {
   const p = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+function today() {
+  return dateKey(new Date());
 }
 
 const zeroes = () => Object.fromEntries(ACTION_ORDER.map((type) => [type, 0]));
@@ -22,6 +30,8 @@ function blank() {
     phase: zeroes(),      // XP earned per action since the last evolution
     totals: zeroes(),
     daily: { date: today() },
+    history: {},          // 'YYYY-MM-DD' -> units per action + { xp, trilhas }
+    trilhas: { done: [] },// [{ day, date }], oldest first
     log: [],
   };
 }
@@ -34,9 +44,18 @@ function load() {
     if (!raw) return blank();
     const parsed = JSON.parse(raw);
     if (parsed.version === 1) return migrateV1(parsed);
-    if (parsed.version !== VERSION) return blank();
+    // v2 knew no per-day history and no trilhas: the lifetime totals carry
+    // over intact, "esta semana" simply starts empty on the next action.
+    if (parsed.version !== 2 && parsed.version !== VERSION) return blank();
     const base = blank();
-    return retireForm({ ...base, ...parsed, totals: { ...base.totals, ...parsed.totals } });
+    return retireForm({
+      ...base,
+      ...parsed,
+      version: VERSION,
+      totals: { ...base.totals, ...parsed.totals },
+      history: { ...base.history, ...parsed.history },
+      trilhas: { ...base.trilhas, ...parsed.trilhas },
+    });
   } catch {
     // Private mode, full quota, corrupt JSON - play anyway, just unsaved.
     return blank();
@@ -89,6 +108,55 @@ function persist() {
 function rollDay() {
   const now = today();
   if (state.daily.date !== now) state.daily = { date: now };
+}
+
+/** The history row for today, created on demand. */
+function dayRow() {
+  const key = today();
+  state.history[key] ||= { xp: 0 };
+  return state.history[key];
+}
+
+/**
+ * Adds one action to today's history row, which is what the achievements
+ * screen reads for "esta semana". `units` are the units logged, including
+ * the ones over the daily cap that earned no XP - the record is of what the
+ * player did, the XP is a separate number.
+ */
+function recordDay(type, units, gained) {
+  const row = dayRow();
+  row[type] = (row[type] || 0) + units;
+  row.xp += gained;
+  trimHistory();
+}
+
+function trimHistory() {
+  const keys = Object.keys(state.history).sort();
+  for (const key of keys.slice(0, Math.max(0, keys.length - HISTORY_DAYS))) {
+    delete state.history[key];
+  }
+}
+
+/** First day of the current week, at 00:00 local (see WEEK_STARTS_ON). */
+function weekStart() {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() - WEEK_STARTS_ON + 7) % 7));
+  return d;
+}
+
+/** Date keys from the start of this week up to today, oldest first. */
+export function weekDays() {
+  const out = [];
+  const d = weekStart();
+  const end = today();
+  for (let i = 0; i < 7; i += 1) {
+    const key = dateKey(d);
+    if (key > end) break;
+    out.push(key);
+    d.setDate(d.getDate() + 1);
+  }
+  return out;
 }
 
 export function getState() {
@@ -259,6 +327,7 @@ export function logAction(type, units) {
   state.totals[type] += units;
   state.phase[type] += gained;
   state.daily[type] = (state.daily[type] || 0) + paidUnits;
+  recordDay(type, units, gained);
 
   state.log.unshift({ type, units, gained, at: new Date().toISOString() });
   state.log.length = Math.min(state.log.length, 100);
@@ -303,6 +372,129 @@ export function devLevelUp() {
   state.xp += gained;
   persist();
   return { gained, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
+}
+
+/** Units of `type` that have paid XP today - what the trilha tasks read. */
+export function doneToday(type) {
+  rollDay();
+  return state.daily[type] || 0;
+}
+
+/** How many times the pet has evolved so far. */
+export function evolutions() {
+  const form = currentForm();
+  return form ? depth(form) : 0;
+}
+
+/**
+ * What the player has done, for the achievements screen.
+ *
+ * `all` reads the lifetime totals, which every save has carried since v1.
+ * `week` sums the per-day history from the start of this week, so a save
+ * that predates the history (v2) shows an empty week until the next action.
+ *
+ * @param {'all'|'week'} period
+ */
+export function activity(period = 'all') {
+  rollDay();
+  const acted = (row) => ACTION_ORDER.some((type) => row[type]);
+
+  if (period === 'all') {
+    return {
+      xp: state.xp,
+      days: Object.values(state.history).filter(acted).length,
+      trilhas: state.trilhas.done.length,
+      units: { ...state.totals },
+    };
+  }
+
+  const units = zeroes();
+  let xp = 0;
+  let days = 0;
+  let trilhas = 0;
+  for (const key of weekDays()) {
+    const row = state.history[key];
+    if (!row) continue;
+    if (acted(row)) days += 1;
+    xp += row.xp || 0;
+    trilhas += row.trilhas || 0;
+    for (const type of ACTION_ORDER) units[type] += row[type] || 0;
+  }
+  return { xp, days, trilhas, units };
+}
+
+/** Every medal with the counter it watches and whether it is earned. */
+export function medals() {
+  const all = activity('all');
+  const lv = level().level;
+  return MEDALS.map((medal) => {
+    const value =
+      medal.kind === 'units' ? all.units[medal.type] || 0
+      : medal.kind === 'xp' ? all.xp
+      : medal.kind === 'days' ? all.days
+      : medal.kind === 'trilhas' ? all.trilhas
+      : lv;
+    return { ...medal, value, done: value >= medal.goal, ratio: Math.min(1, value / medal.goal) };
+  });
+}
+
+/**
+ * The trilha the player is on: the one after the last finished, with its
+ * tasks checked against what was logged today.
+ *
+ * `waiting` is true when today's trilha is already done - there is one per
+ * calendar day, so the next opens tomorrow. Nothing is lost by skipping a
+ * day: the same trilha is simply still there.
+ */
+export function trilhaToday() {
+  rollDay();
+  const day = state.trilhas.done.length + 1;
+  const def = trilhaFor(day);
+  const tasks = def.tasks.map((task) => {
+    const have = Math.min(doneToday(task.type), task.units);
+    return { ...task, have, done: have >= task.units };
+  });
+  return {
+    ...def,
+    tasks,
+    xp: TRILHA_XP,
+    ready: tasks.every((task) => task.done),
+    waiting: state.trilhas.done.at(-1)?.date === today(),
+  };
+}
+
+/** Day 1 up to a few past the current one, for the path screen. */
+export function trilhaPath(ahead = 5) {
+  const current = trilhaToday();
+  const nodes = [];
+  for (let day = 1; day < current.day + ahead; day += 1) {
+    const status = day < current.day ? 'done'
+      : day > current.day ? 'locked'
+      : current.waiting ? 'waiting' : 'current';
+    nodes.push({ ...trilhaFor(day), status, date: state.trilhas.done[day - 1]?.date || null });
+  }
+  return nodes;
+}
+
+/**
+ * Finishes today's trilha and pays the flat bonus. Same result shape as
+ * `logAction`, so the home screen can react to it the same way.
+ *
+ * @returns {{gained:number, paidUnits:number, cappedUnits:number, ready:boolean}|null}
+ */
+export function completeTrilha() {
+  const trilha = trilhaToday();
+  if (!trilha.ready || trilha.waiting) return null;
+
+  state.trilhas.done.push({ day: trilha.day, date: today() });
+  state.xp += TRILHA_XP;
+  const row = dayRow();
+  row.xp += TRILHA_XP;
+  row.trilhas = (row.trilhas || 0) + 1;
+  trimHistory();
+  persist();
+
+  return { gained: TRILHA_XP, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
 }
 
 export function resetSave() {

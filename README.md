@@ -53,7 +53,9 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
 1. **First run** — pick one of four eggs, each showing what it hatches:
    Branco → Tigrin (Normal), Vermelho → Brasinha (Fogo),
    Azul → Tigre d'Água (Água), Verde → Folhiger (Grama).
-2. **Log real-world actions** — five of them, each a flat XP rate:
+2. **Log real-world actions** — five of them, each a flat XP rate. On the
+   home screen they live behind one *Tarefas* icon on the left, which
+   unfolds into the five buttons:
 
    | Action   | Rate              | Daily cap   | Feeds      |
    |----------|-------------------|-------------|------------|
@@ -104,6 +106,24 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    rarity, the status bars and the next-evolution preview. Rarity is earned
    by evolving, never drawn. **Enciclopédia** is shown but locked until it
    is built.
+7. **Conquistas** — the crown in the middle of the home header. Everything
+   the player has done, as **Sempre** or **Esta semana** (segunda a
+   domingo, `WEEK_STARTS_ON` in `config.js`): XP, active days, trilhas,
+   units per action, plus the medals in `src/js/medals.js`. It is a record,
+   not a target — every counter it reads only goes up, nothing expires and
+   nothing is phrased as being behind. `state.js` keeps a per-day history
+   (`history`, 400 days) for the week column; the lifetime column comes
+   from the totals every save has carried since v1.
+8. **Trilhas** — the closed fist in the lower right. One short mission per
+   day, on a Duolingo-shaped path: *Dia 1*, *Dia 2*, … Each day asks for a
+   few of the same five actions and carries one small thing worth knowing.
+   The tasks tick themselves off from what was logged today — here or on
+   the home screen — and finishing pays a flat `TRILHA_XP` (25) printed on
+   the card before the player commits. One per calendar day: finish today's
+   and the next opens tomorrow. What is *not* borrowed from Duolingo is the
+   streak — a skipped day loses nothing, the trilha is simply still there.
+   The days are data in `src/js/trilhas.js`, and the list wraps, so the
+   path never runs out.
 
 A form without its own sprite borrows Tigrin's until it lands (see *Art
 pipeline*). v1 saves migrate to a Tigrin that keeps its XP, totals and
@@ -137,8 +157,10 @@ Plain HTML5 + CSS + JS, ES modules, no build step, no dependencies.
 ```
 index.html
 src/styles/   base (reset + tokens) · stage (viewport) · ui (screens)
-src/js/       config · forms · sprites · state · viewport · main
-src/js/ui/    dom · art · egg · home · sheet · evolve · info
+src/js/       config · forms · trilhas · medals · sprites · state
+              viewport · pedometer · main
+src/js/ui/    dom · art · toast · egg · home · sheet · evolve · info
+              achievements · trilhas · finance · help · tabbar
 assets/pet/   form sprites, <id>.webp, 900px
 assets/icons/ action button icons, <action>.webp, 256px
 assets/source/ original artwork, <id>.png, untouched

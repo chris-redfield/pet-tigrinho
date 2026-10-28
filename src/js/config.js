@@ -43,6 +43,7 @@ export const ACTIONS = {
     rate: '1.000',
     unit: 'passo', unitPlural: 'passos',
     xp: 10, step: 1000, cap: 15000,
+    sensor: true,
   },
   book: {
     label: 'Leitura', verb: 'Registrar leitura',

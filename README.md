@@ -114,11 +114,17 @@ All tuning lives in `src/js/config.js`.
 
 ### Known gaps
 
-- **Actions are self-reported.** The web has no reliable step counter: there
-  is no background sensor access and no Health Connect / HealthKit bridge
-  from a browser. Photos use a real `capture` input; steps, pages and minutes
-  are typed in. That is fine here — there is no leaderboard and nothing to
-  win, so the only person a false entry cheats is the player.
+- **Steps are counted only while the game is open.** The web has no
+  step-counter API and no Health Connect / HealthKit bridge from a browser.
+  The Passos sheet has *Contar com o celular*: it reads the accelerometer
+  (`devicemotion`) while the sheet is open, keeps the screen on with a wake
+  lock, and finds each step as a bounce in the acceleration
+  (`src/js/pedometer.js`). It needs HTTPS (or localhost), and iOS asks for
+  permission on the tap. Typing the count stays available for walks the
+  phone did not see. Photos use a real `capture` input, which opens the
+  phone's camera; pages and minutes are typed in. Self-reporting is fine
+  here — there is no leaderboard and nothing to win, so the only person a
+  false entry cheats is the player.
 - **Photos are not stored.** The image is shown once in the sheet and the
   object URL is revoked on close. Nothing is uploaded and nothing is kept.
   A persistent album would need IndexedDB.
@@ -183,7 +189,12 @@ log real actions first to steer the Azul branch).
 
 ```sh
 node test/state.test.mjs
+node test/pedometer.test.mjs
 ```
+
+On a phone: the camera works over plain HTTP, but the step sensor only
+works over HTTPS, so test from an HTTPS URL (a tunnel or GitHub Pages)
+rather than `http://<your-pc-ip>:8000`.
 
 ## Art pipeline
 

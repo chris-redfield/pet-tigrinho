@@ -360,6 +360,8 @@
 }
 .sheet__note--warn { color: #ffb37a; }
 .sheet .btn + .btn { margin-top: calc(var(--u) * 2.5); }
+.sheet__sensor { margin-bottom: calc(var(--u) * 2); }
+.sheet__sensor + .sheet__note { margin: calc(var(--u) * -1) 0 calc(var(--u) * 3); text-align: center; }
 
 .shot {
   width: 100%;

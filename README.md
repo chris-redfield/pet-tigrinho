@@ -114,11 +114,17 @@ All tuning lives in `src/js/config.js`.
 
 ### Known gaps
 
-- **Actions are self-reported.** The web has no reliable step counter: there
-  is no background sensor access and no Health Connect / HealthKit bridge
-  from a browser. Photos use a real `capture` input; steps, pages and minutes
-  are typed in. That is fine here — there is no leaderboard and nothing to
-  win, so the only person a false entry cheats is the player.
+- **Steps are counted only while the game is open.** The web has no
+  step-counter API and no Health Connect / HealthKit bridge from a browser.
+  The Passos sheet has *Contar com o celular*: it reads the accelerometer
+  (`devicemotion`) while the sheet is open, keeps the screen on with a wake
+  lock, and finds each step as a bounce in the acceleration
+  (`src/js/pedometer.js`). It needs HTTPS (or localhost), and iOS asks for
+  permission on the tap. Typing the count stays available for walks the
+  phone did not see. Photos use a real `capture` input, which opens the
+  phone's camera; pages and minutes are typed in. Self-reporting is fine
+  here — there is no leaderboard and nothing to win, so the only person a
+  false entry cheats is the player.
 - **Photos are not stored.** The image is shown once in the sheet and the
   object URL is revoked on close. Nothing is uploaded and nothing is kept.
   A persistent album would need IndexedDB.
@@ -134,6 +140,7 @@ src/styles/   base (reset + tokens) · stage (viewport) · ui (screens)
 src/js/       config · forms · sprites · state · viewport · main
 src/js/ui/    dom · art · egg · home · sheet · evolve · info
 assets/pet/   form sprites, <id>.webp, 900px
+assets/icons/ action button icons, <action>.webp, 256px
 assets/source/ original artwork, <id>.png, untouched
 docs/         evolucoes.md: forms + ChatGPT prompts
 tools/        sprites.py: source art -> sprites
@@ -182,7 +189,12 @@ log real actions first to steer the Azul branch).
 
 ```sh
 node test/state.test.mjs
+node test/pedometer.test.mjs
 ```
+
+On a phone: the camera works over plain HTTP, but the step sensor only
+works over HTTPS, so test from an HTTPS URL (a tunnel or GitHub Pages)
+rather than `http://<your-pc-ip>:8000`.
 
 ## Art pipeline
 
@@ -199,6 +211,11 @@ python3 tools/sprites.py              # needs Pillow
 It crops each new source to its alpha bounds, resamples it to a 900px wide
 `assets/pet/<id>.webp`, regenerates `src/js/sprites.js` (the list of forms
 that have a sprite, read by `forms.js`) and prints what is still missing.
+
+Action icons work the same way: `assets/source/icons/<action>.png` (action
+ids: `photo`, `steps`, `book`, `course`, `meal`) becomes a 256px square
+`assets/icons/<action>.webp`. Until an action has one, its button shows the
+built-in gold SVG from `ICONS` in `config.js`.
 `--knockout` clears a painted white background; `--force` redoes all.
 
 `scale` (sprite width as a percentage of stage width) defaults by rarity in

@@ -3,6 +3,7 @@ import { getState, progress, remainingToday, petName, level, canEvolve, evolve, 
 import { openSheet } from './sheet.js';
 import { showEvolution } from './evolve.js';
 import { openInfo } from './info.js';
+import { ICON_ART } from '../sprites.js';
 import { h, num } from './dom.js';
 import { iconArt } from './art.js';
 
@@ -34,19 +35,20 @@ export function renderHome(host) {
     art,
     sparks);
 
+  // Square icon buttons in a column beside the pet. The name lives in the
+  // aria-label; the XP stays on the face of every button, because the
+  // player must always see what an action pays before doing it.
   const buttons = new Map();
-  const actions = h('nav', { class: 'actions' },
+  const actions = h('nav', { class: 'actions', 'aria-label': 'Registrar atividade' },
     ACTION_ORDER.map((type) => {
-      const cfg = ACTIONS[type];
       const rate = h('div', { class: 'act__rate' });
+      const icon = ICON_ART.includes(type)
+        ? h('img', { class: 'act__icon act__icon--art', src: `assets/icons/${type}.webp`, alt: '' })
+        : iconArt(ICONS[type], 'act__icon');
       const button = h('button', {
         class: 'act panel', type: 'button',
         onclick: () => openSheet(screen, type, onLogged),
-      },
-        iconArt(ICONS[type], 'act__icon'),
-        h('div', { class: 'act__txt' },
-          h('div', { class: 'act__label', text: cfg.label }),
-          rate));
+      }, icon, rate);
       buttons.set(type, { button, rate });
       return button;
     }));
@@ -61,8 +63,7 @@ export function renderHome(host) {
     h('div', { class: 'hdr' }, stageName, xpLabel, infoBtn),
     h('div', { class: 'xpbar' }, fill),
     nextLabel,
-    petStage,
-    actions,
+    h('div', { class: 'home-body' }, actions, petStage),
     devBtn);
 
   function update() {
@@ -99,7 +100,10 @@ export function renderHome(host) {
       const cfg = ACTIONS[type];
       const left = remainingToday(type);
       button.dataset.done = String(left === 0);
-      rate.textContent = left === 0 ? 'concluído hoje' : `+${cfg.xp} XP / ${cfg.rate}`;
+      rate.textContent = left === 0 ? '✓ hoje' : `+${cfg.xp} XP`;
+      button.setAttribute('aria-label', left === 0
+        ? `${cfg.label}: concluído hoje`
+        : `${cfg.label}: +${cfg.xp} XP por ${cfg.rate}`);
     }
   }
 

@@ -55,17 +55,36 @@ body[data-mode="framed"] #backdrop { opacity: 1; }
     radial-gradient(135% 85% at 50% 12%, var(--c-red-lit) 0%, var(--c-red) 45%, var(--c-red-deep) 100%);
 }
 
-/* Faint gold ornament wash, so the red is never a flat slab. */
+/*
+ * The floor pattern: a faint gold diamond lattice drifting diagonally, as
+ * if a camera glides over a plane. The layer is one tile bigger than the
+ * stage on every side and moves exactly one tile per loop, so the loop is
+ * seamless. Low contrast on purpose - it should read as depth, never pull
+ * the eye. Reduced motion (base.css) leaves it still.
+ *
+ * Smoothness: the tile is rounded to whole pixels, or the rasterised
+ * pattern and the move drift apart and the loop visibly jumps; the layer
+ * gets its own GPU layer; and the speed (~12px/s on a phone) is fast enough
+ * to read as sliding rather than as single-pixel steps.
+ */
+.stage {
+  --tile: round(calc(var(--u) * 12), 1px);
+}
 .stage::before {
   content: "";
   position: absolute;
-  inset: 0;
+  inset: calc(var(--tile) * -1);
+  z-index: -1;
   pointer-events: none;
-  opacity: .14;
-  background-image:
-    radial-gradient(circle at 50% 50%, var(--c-gold) 1px, transparent 1.6px);
-  background-size: calc(var(--u) * 9) calc(var(--u) * 9);
-  mask-image: radial-gradient(120% 80% at 50% 10%, #000 20%, transparent 75%);
+  opacity: .12;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Cg fill='%23f5c242'%3E%3Cpath d='M20 14l6 6-6 6-6-6z'/%3E%3Cpath d='M0 -3l3 3-3 3-3-3zM40 -3l3 3-3 3-3-3zM0 37l3 3-3 3-3-3zM40 37l3 3-3 3-3-3z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: var(--tile) var(--tile);
+  animation: floor-drift 4s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+@keyframes floor-drift {
+  to { transform: translate3d(calc(var(--tile) * -1), var(--tile), 0); }
 }
 
 /* Only the desktop frame gets rounded corners and a lift. */

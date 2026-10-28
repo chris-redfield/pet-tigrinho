@@ -15,9 +15,10 @@ const throws = (name, fn) => {
 
 // --- the prompt carries the non-negotiables ---
 ok('focus on Banco do Brasil', SYSTEM_PROMPT.includes('Banco do Brasil'), true);
-ok('says no to bets', /NÃO deve colocar dinheiro em cassinos online, bets/.test(SYSTEM_PROMPT), true);
+ok('says no to bets', /cassinos online, bets e jogos de aposta NÃO são investimento/.test(SYSTEM_PROMPT), true);
+ok('never recommends bets', SYSTEM_PROMPT.includes('NUNCA recomende bets'), true);
 ok('points to help', SYSTEM_PROMPT.includes('188'), true);
-ok('no invented rates', SYSTEM_PROMPT.includes('NUNCA invente taxas'), true);
+ok('no invented rates', /NUNCA invente rentabilidades, taxas/.test(SYSTEM_PROMPT), true);
 
 // --- history cleaning ---
 throws('empty history rejected', () => cleanHistory([]));

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "game",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set PORT=8131&& node server.js"],
+      "port": 8131
+    }
+  ]
+}

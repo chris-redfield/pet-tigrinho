@@ -87,6 +87,16 @@ body[data-mode="framed"] #backdrop { opacity: 1; }
   to { transform: translate3d(calc(var(--tile) * -1), var(--tile), 0); }
 }
 
+/* With "reduce motion" on, base.css would freeze the floor. It keeps
+   drifting toward the bottom-left at half speed instead: still reads as a
+   slide (~6px/s on a phone), calm enough not to pull the eye. */
+@media (prefers-reduced-motion: reduce) {
+  .stage::before {
+    animation-duration: 8s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
 /* Only the desktop frame gets rounded corners and a lift. */
 body[data-mode="framed"] .stage {
   border-radius: calc(var(--u) * 3);

@@ -36,7 +36,7 @@ function load() {
     if (parsed.version === 1) return migrateV1(parsed);
     if (parsed.version !== VERSION) return blank();
     const base = blank();
-    return { ...base, ...parsed, totals: { ...base.totals, ...parsed.totals } };
+    return retireForm({ ...base, ...parsed, totals: { ...base.totals, ...parsed.totals } });
   } catch {
     // Private mode, full quota, corrupt JSON - play anyway, just unsaved.
     return blank();
@@ -59,6 +59,22 @@ function migrateV1(old) {
     daily: old.daily || base.daily,
     log: old.log || [],
   };
+}
+
+/**
+ * Saves can name a form that no longer exists (the tree was cut down to five
+ * lines). Put the pet back on its egg's line at the depth its XP has reached,
+ * taking the first listed branch where there is a choice.
+ */
+function retireForm(save) {
+  if (!save.form || FORMS[save.form]) return save;
+  const egg = EGGS.find((e) => e.id === save.pet?.egg) || EGGS[0];
+  let id = egg.base;
+  for (const at of EVOLVE_AT) {
+    if (save.xp < levelStart(at) || !BRANCHES[id]) break;
+    id = BRANCHES[id][0].id;
+  }
+  return { ...save, form: id };
 }
 
 function persist() {
@@ -167,13 +183,17 @@ export function stats() {
 /**
  * Which form `formId` evolves into, given the status bars.
  *
- * Deterministic and published - no roll anywhere:
- *   - branches with `needs`: of the branches whose requirements are all
- *     met, the most demanding one (highest sum of thresholds) wins, so the
- *     extra effort a harder branch asks for is what earns it. With nothing
- *     met, the branch the pet came closest to wins (largest smallest margin).
- *   - branches with `favors`: the one whose favoured bar is highest wins.
- * Ties go to the branch listed first in forms.js.
+ * Deterministic and published - no roll anywhere. One rule covers every
+ * case: each branch's margin is how far its weakest required bar sits above
+ * (or below) its requirement, and the largest margin wins.
+ *
+ *   - one branch met: it is the only one with a margin >= 0, so it wins.
+ *   - both met: the one the pet cleared by more wins, so it follows what
+ *     the player actually focused on rather than favouring a harder route.
+ *   - none met: the one the pet came closest to wins.
+ *
+ * A branch without `needs` is the only way forward and always wins. Ties go
+ * to the branch listed first in forms.js.
  *
  * @returns {{form: object, options: {form: object, met: boolean}[]} | null}
  */
@@ -183,21 +203,12 @@ export function pickBranch(formId, bars) {
   const by = Object.fromEntries(bars.map((b) => [b.id, b.raw]));
 
   const options = branches.map((form) => {
-    if (form.needs) {
-      const needs = Object.entries(form.needs);
-      const margin = Math.min(...needs.map(([id, min]) => by[id] - min));
-      const demand = needs.reduce((sum, [, min]) => sum + min, 0);
-      return { form, met: margin >= 0, margin, demand };
-    }
-    return { form, met: true, margin: Math.max(...form.favors.map((id) => by[id])), demand: 0 };
+    if (!form.needs) return { form, met: true, margin: 0 };
+    const margin = Math.min(...Object.entries(form.needs).map(([id, min]) => by[id] - min));
+    return { form, met: margin >= 0, margin };
   });
 
-  // Met beats unmet; among met, more demanding wins; then the larger margin.
-  const beats = (b, a) =>
-    b.met !== a.met ? b.met
-      : b.met && b.demand !== a.demand ? b.demand > a.demand
-        : b.margin > a.margin;
-  const best = options.reduce((a, b) => (beats(b, a) ? b : a));
+  const best = options.reduce((a, b) => (b.margin > a.margin ? b : a));
   return { form: best.form, options };
 }
 

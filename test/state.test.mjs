@@ -17,7 +17,7 @@ const ok = (name, got, want) => {
 
 ok('starts petless', S.hasPet(), false);
 S.chooseEgg('azul');
-ok('azul hatches Gotigre', S.currentForm().id, 'gotigre');
+ok('azul hatches Tigre d\'Água', S.currentForm().id, 'tigre-dagua');
 ok('has pet after egg', S.hasPet(), true);
 
 // --- flat rates, no randomness anywhere ---
@@ -57,10 +57,10 @@ ok('meal feeds fullness', (S.logAction('meal', 2), S.stats().find((s) => s.id ==
 ok('health pct = 150 / (.35*1800)', S.stats().find((s) => s.id === 'health').pct, 24);
 
 // --- naming ---
-ok('unnamed pet uses form name', S.petName(), 'Gotigre');
+ok('unnamed pet uses form name', S.petName(), "Tigre d'Água");
 ok('rename trims and collapses', S.renamePet('  Mimi   do   Sol  '), 'Mimi do Sol');
 ok('rename caps length', S.renamePet('x'.repeat(40)).length, 16);
-ok('blank rename restores form name', S.renamePet('   '), 'Gotigre');
+ok('blank rename restores form name', S.renamePet('   '), "Tigre d'Água");
 S.renamePet('Mimi');
 
 // --- persistence ---
@@ -74,17 +74,19 @@ ok('phase survives reload', reloaded.getState().phase.meal, 20);
 const bars = (w, h, f, s) => [
   { id: 'wisdom', raw: w }, { id: 'happiness', raw: h }, { id: 'fullness', raw: f }, { id: 'health', raw: s },
 ];
-ok('only Coraliger met', S.pickBranch('gotigre', bars(10, 95, 0, 10)).form.id, 'coraliger');
-ok('Neviger met', S.pickBranch('gotigre', bars(75, 0, 0, 85)).form.id, 'neviger');
-ok('harder Toxitigre beats Neviger', S.pickBranch('gotigre', bars(96, 0, 0, 91)).form.id, 'toxitigre');
-ok('none met -> closest', S.pickBranch('gotigre', bars(60, 50, 0, 79)).form.id, 'neviger');
-ok('Sombriger needs food + wisdom', S.pickBranch('tigrin', bars(81, 10, 91, 0)).form.id, 'sombriger');
-ok('Vulcaniger needs fullness 95', S.pickBranch('brasinha', bars(0, 0, 96, 0)).form.id, 'vulcaniger');
-ok('Espinhiger beats Troncotigre', S.pickBranch('folhiger', bars(86, 0, 81, 96)).form.id, 'espinhiger');
-ok('Palatigre needs health 100', S.pickBranch('tigreluz', bars(95, 99, 0, 100)).form.id, 'palatigre');
-ok('Nv36 by highest stat', S.pickBranch('mentetigre', bars(40, 90, 10, 20)).form.id, 'ilusioniger');
-ok('Nv36 favors either stat', S.pickBranch('mentetigre', bars(40, 10, 95, 20)).form.id, 'tigre-mestre');
-ok('final forms have no branch', S.pickBranch('palatigre', bars(0, 0, 0, 0)), null);
+ok('only Oceaniger met', S.pickBranch('tigre-dagua', bars(10, 95, 0, 10)).form.id, 'oceaniger');
+ok('Neviger met', S.pickBranch('tigre-dagua', bars(75, 0, 0, 85)).form.id, 'neviger');
+ok('both met: Água cleared by more', S.pickBranch('tigre-dagua', bars(65, 95, 0, 70)).form.id, 'oceaniger');
+ok('both met: Gelo cleared by more', S.pickBranch('tigre-dagua', bars(85, 72, 0, 90)).form.id, 'neviger');
+ok('tie goes to first listed', S.pickBranch('tigre-dagua', bars(70, 80, 0, 70)).form.id, 'oceaniger');
+ok('none met -> closest', S.pickBranch('tigre-dagua', bars(50, 60, 0, 40)).form.id, 'oceaniger');
+ok('Água at 70% happiness', S.pickBranch('tigre-dagua', bars(0, 70, 0, 0)).form.id, 'oceaniger');
+ok('Neviger at 60/60', S.pickBranch('tigre-dagua', bars(60, 0, 0, 60)).form.id, 'neviger');
+ok('cosmic line is direct', S.pickBranch('tigrin', bars(0, 0, 0, 0)).form.id, 'estreliger');
+ok('Estreliger -> Tigre Cósmico', S.pickBranch('estreliger', bars(0, 0, 0, 0)).form.id, 'tigre-cosmico');
+ok('fire line is direct', S.pickBranch('brasinha', bars(0, 0, 96, 0)).form.id, 'tigre-fornalha');
+ok('grass line is direct', S.pickBranch('floriger', bars(86, 0, 81, 96)).form.id, 'tigre-yggdrasil');
+ok('final forms have no branch', S.pickBranch('tigre-glacial', bars(0, 0, 0, 0)), null);
 
 // --- evolving end to end: azul egg, focused on wisdom + health ---
 S.resetSave();
@@ -96,11 +98,11 @@ for (let day = 0; day < 4; day++) {
   S.logAction('course', 180);                                 // +120
   S.logAction('steps', 15000);                                // +150
 }
-ok('1680xp is still Gotigre', S.currentForm().id, 'gotigre');
-ok('prediction is Toxitigre', S.nextBranch().form.id, 'toxitigre');
+ok('1680xp is still Tigre d\'Água', S.currentForm().id, 'tigre-dagua');
+ok('prediction is Neviger', S.nextBranch().form.id, 'neviger');
 newDay();
 r = S.logAction('book', 100);
-ok('crossing Nv 16 evolves', r.evolved?.id, 'toxitigre');
+ok('crossing Nv 16 evolves', r.evolved?.id, 'neviger');
 ok('evolved form is Raro', S.currentForm().rarity, 'raro');
 ok('phase restarts', S.stats().every((s) => s.value === 0), true);
 ok('next evolution is Nv 36', S.progress().next, 36);
@@ -113,6 +115,19 @@ const migrated = await import('../src/js/state.js?v1');
 ok('v1 becomes Tigrin', migrated.currentForm().id, 'tigrin');
 ok('v1 keeps xp and name', [migrated.getState().xp, migrated.petName()], [500, 'Rex']);
 ok('v1 gains meal totals', migrated.getState().totals.meal, 0);
+
+// --- saves holding a retired form rejoin their egg's line ---
+store.set('pet-tigrinho:save', JSON.stringify({ version: 2, pet: { egg: 'branco', name: 'Luz' }, form: 'tigreluz',
+  xp: 2000, phase: {}, totals: {}, daily: { date: 'x' }, log: [] }));
+const retired = await import('../src/js/state.js?retired');
+ok('retired Raro -> Estreliger', retired.currentForm().id, 'estreliger');
+ok('retired save keeps name', retired.petName(), 'Luz');
+store.set('pet-tigrinho:save', JSON.stringify({ version: 2, pet: { egg: 'azul' }, form: 'gotigre',
+  xp: 100, phase: {}, totals: {}, daily: { date: 'x' }, log: [] }));
+ok('retired base -> Tigre d\'Água', (await import('../src/js/state.js?retired3')).currentForm().id, 'tigre-dagua');
+store.set('pet-tigrinho:save', JSON.stringify({ version: 2, pet: { egg: 'azul' }, form: 'sereiger',
+  xp: 9500, phase: {}, totals: {}, daily: { date: 'x' }, log: [] }));
+ok('retired final -> Leviatã', (await import('../src/js/state.js?retired2')).currentForm().id, 'tigre-leviata');
 
 console.log(failed ? `\n${failed} failing` : '\nall green');
 process.exit(failed ? 1 : 0);

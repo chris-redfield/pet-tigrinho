@@ -67,34 +67,41 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    Nv 16 is at 1.800 XP and Nv 36 at 9.450. A normal day lands near 150 XP
    and a maxed one ~510, so the first evolution is about two weeks in and
    the second about two months.
-4. **Evolve** — two branching evolutions, Pokémon style. The full tree
-   (52 forms) is data in `src/js/forms.js`:
+4. **Evolve** — five lines of three forms, Pokémon style, at Nv 16 and
+   Nv 36. The tree (14 forms) is data in `src/js/forms.js`:
 
-   - **Nv 16** — the base form becomes one of three Raro forms, each with
-     stat requirements (e.g. Gotigre → Coraliger: Felicidade ≥ 90%).
-   - **Nv 36** — each Raro form becomes one Lendário or two Épico forms.
-     The Tigreluz line has requirements; the rest go to the form whose
-     favoured stat is highest.
+   | Egg      | Comum    | Raro (Nv 16)   | Lendário (Nv 36) |
+   |----------|----------|----------------|------------------|
+   | Branco   | Tigrin   | Estreliger     | Tigre Cósmico    |
+   | Vermelho | Brasinha | Tigre-Fornalha | Mechatigre       |
+   | Azul     | Gotigre  | Tigre d'Água   | Tigre-Leviatã    |
+   | Azul     | Gotigre  | Neviger        | Tigre-Glacial    |
+   | Verde    | Folhiger | Floriger       | Tigre-Yggdrasil  |
 
-   Rule (`pickBranch` in `src/js/state.js`): of the branches whose
-   requirements are met, the most demanding wins; if none is met, the one
-   it came closest to wins; ties go to the first listed.
+   Only the Azul egg branches: at Nv 16 Gotigre becomes Tigre d'Água
+   (Felicidade ≥ 70%) or Neviger (Sabedoria ≥ 60% and Saúde ≥ 60%). Rule
+   (`pickBranch` in `src/js/state.js`): each route's *margin* is how far
+   its weakest required bar is above (or below) its requirement, and the
+   largest margin wins. So if only one route is met, it wins; if both are
+   met, the one cleared by more wins (it follows what the player focused
+   on, not the harder route); if neither is met, the closest wins. Ties go
+   to the first listed.
 
 5. **Status bars** measure the current *phase* (since the last evolution):
    XP earned from the bar's source actions as a share of `share × phase
    span`. Inside a phase they only fill — no hunger timer, no decay, no red
    low state. Evolving starts a new phase and they start over, like the XP
    bar does. The shares add up to more than 1, so you cannot max every bar
-   in one phase: what you focus on picks the branch.
+   in one phase: what you focus on picks the branch where there is one.
 6. **Pet info** — the ⓘ button opens name (tap to rename), level, type,
    rarity, the status bars and the next-evolution preview. Rarity is earned
    by evolving, never drawn. **Enciclopédia** is shown but locked until it
    is built.
 
-Only Tigrin has art so far; every form borrows `tigrinho-0.webp` until its
-own sprite lands (set `art`/`scale` per form in `forms.js`). The old
-`tigrinho-1`/`tigrinho-2` sprites are unused for now. v1 saves migrate to a
-Tigrin that keeps its XP, totals and name.
+A form without its own sprite borrows Tigrin's until it lands (see *Art
+pipeline*). v1 saves migrate to a Tigrin that keeps its XP, totals and
+name; saves holding a form cut from the old 52-form tree rejoin their egg's
+line at the depth their XP has reached.
 
 All tuning lives in `src/js/config.js`.
 
@@ -117,10 +124,12 @@ Plain HTML5 + CSS + JS, ES modules, no build step, no dependencies.
 ```
 index.html
 src/styles/   base (reset + tokens) · stage (viewport) · ui (screens)
-src/js/       config · forms · state · viewport · main
+src/js/       config · forms · sprites · state · viewport · main
 src/js/ui/    dom · art · egg · home · sheet · evolve · info
-assets/pet/   stage sprites, 900px WebP
-assets/source/ original artwork, untouched
+assets/pet/   form sprites, <id>.webp, 900px
+assets/source/ original artwork, <id>.png, untouched
+docs/         evolucoes.md: forms + ChatGPT prompts
+tools/        sprites.py: source art -> sprites
 test/         node test/state.test.mjs
 ```
 
@@ -167,20 +176,22 @@ node test/state.test.mjs
 
 ## Art pipeline
 
-Source art goes in `assets/source/` untouched. Sprites are cropped to their
-alpha bounds and resampled to 900px wide WebP:
+Sprites are generated in the ChatGPT web interface (no API). Copy-paste
+prompts for every form, and which reference images to attach, are in
+[`docs/evolucoes.md`](docs/evolucoes.md).
+
+Save each result as `assets/source/<form id>.png` (kept untouched) and run:
 
 ```sh
-python3 - <<'PY'
-from PIL import Image
-im = Image.open('assets/source/NAME.png').convert('RGBA')
-im = im.crop(im.getchannel('A').getbbox())
-im = im.resize((900, round(im.height * 900 / im.width)), Image.LANCZOS)
-im.save('assets/pet/NAME.webp', 'WEBP', quality=90, method=6)
-PY
+python3 tools/sprites.py              # needs Pillow
 ```
 
-Each stage sets its own `scale` in `config.js` (sprite width as a percentage
-of stage width), because the later forms carry effects — spray, orbiting
-stars — well outside the body silhouette and need more room to read at the
-same apparent size.
+It crops each new source to its alpha bounds, resamples it to a 900px wide
+`assets/pet/<id>.webp`, regenerates `src/js/sprites.js` (the list of forms
+that have a sprite, read by `forms.js`) and prints what is still missing.
+`--knockout` clears a painted white background; `--force` redoes all.
+
+`scale` (sprite width as a percentage of stage width) defaults by rarity in
+`forms.js` — 62 / 78 / 84 — because the later forms carry effects (spray,
+orbiting stars) well outside the body silhouette and need more room to read
+at the same apparent size. Pass `scale` to a form to override it.

@@ -70,6 +70,7 @@
 /* ---------- the pet ---------- */
 
 .pet-stage {
+  --float-time: 4.2s;
   flex: 1 1 auto;
   position: relative;
   display: grid;
@@ -89,7 +90,7 @@
   width: calc(var(--u) * var(--pet-scale, 62));
   height: auto;
   filter: drop-shadow(0 calc(var(--u) * 1.6) calc(var(--u) * 2) #2a060944);
-  animation: float 4.6s var(--ease) infinite;
+  animation: float var(--float-time) ease-in-out infinite;
 }
 
 .pet-ground {
@@ -99,6 +100,8 @@
   height: calc(var(--u) * 5);
   border-radius: 50%;
   background: radial-gradient(ellipse, #2a060955 0%, transparent 70%);
+  /* In step with the float: the shadow tightens as the pet rises. */
+  animation: ground var(--float-time) ease-in-out infinite;
 }
 
 /*
@@ -117,7 +120,7 @@
   filter: brightness(0) invert(1) blur(calc(var(--u) * 1.5))
           drop-shadow(0 0 calc(var(--u) * 2) var(--aura, #ffe9a8))
           drop-shadow(0 0 calc(var(--u) * 4) var(--aura, #ffe9a8));
-  animation: float 4.6s var(--ease) infinite, aura 2s var(--ease) infinite;
+  animation: float var(--float-time) ease-in-out infinite, aura 2s var(--ease) infinite;
 }
 .pet-stage[data-ready="true"] .pet-aura { display: block; }
 @keyframes aura {
@@ -150,9 +153,29 @@
   100% { transform: translateY(calc(var(--u) * -18)) scale(1.1); opacity: 0; }
 }
 
+/* Idle float: a slow bob with a slight sway, so the pet feels alive. */
 @keyframes float {
-  0%, 100% { transform: translateY(0)                      rotate(-.6deg); }
-  50%      { transform: translateY(calc(var(--u) * -2.2))  rotate(.6deg); }
+  0%, 100% { transform: translateY(0)                      rotate(-.8deg); }
+  50%      { transform: translateY(calc(var(--u) * -3.6))  rotate(.8deg); }
+}
+@keyframes ground {
+  0%, 100% { transform: scaleX(1);   opacity: 1; }
+  50%      { transform: scaleX(.8);  opacity: .6; }
+}
+
+/*
+ * With "reduce motion" on, base.css stops every animation. The pet keeps a
+ * much softer float instead - small, slow, no sway - so the home screen is
+ * not frozen, while staying well inside what reduced-motion users accept.
+ */
+@keyframes float-soft {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(calc(var(--u) * -1.2)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pet-art, .pet-aura {
+    animation: float-soft 6s ease-in-out infinite !important;
+  }
 }
 @keyframes pulse {
   0%, 100% { transform: scale(1);    opacity: .85; }
@@ -694,7 +717,8 @@
 .tabbar {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
   border-top: calc(var(--u) * .5) solid var(--c-gold-dim);
   background: linear-gradient(180deg, #5e0d12, var(--c-red-deep));
 }
@@ -848,3 +872,60 @@
   object-fit: cover;
   object-position: 50% 30%;
 }
+
+/* ---------- help tab ---------- */
+
+.help { padding: calc(var(--u) * 4) calc(var(--u) * 5) 0; }
+.help__hdr { flex: 0 0 auto; margin-bottom: calc(var(--u) * 3); }
+.help__title { margin: 0; font-size: calc(var(--u) * 6.4); }
+.help__sub { margin: calc(var(--u) * .6) 0 0; font-size: calc(var(--u) * 3.1); line-height: 1.4; color: var(--c-ink-dim); }
+
+.help__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 3.6);
+  padding-bottom: calc(var(--u) * 5);
+}
+.help__card { padding: calc(var(--u) * 4); }
+.help__top { display: flex; align-items: flex-start; gap: calc(var(--u) * 3); }
+.help__num {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: calc(var(--u) * 8);
+  height: calc(var(--u) * 8);
+  border-radius: 50%;
+  background: linear-gradient(180deg, var(--c-gold-lit), var(--c-gold));
+  color: #4a2403;
+  font-weight: 800;
+  font-size: calc(var(--u) * 4);
+}
+.help__name { margin: 0; font-size: calc(var(--u) * 4); line-height: 1.25; color: var(--c-gold-lit); }
+.help__tag { display: block; margin-top: calc(var(--u) * .6); font-size: calc(var(--u) * 2.7); color: #a6ecd0; }
+.help__steps {
+  margin: calc(var(--u) * 3) 0 0;
+  padding-left: calc(var(--u) * 5);
+  font-size: calc(var(--u) * 3.2);
+  line-height: 1.45;
+  color: var(--c-ink);
+}
+.help__steps li + li { margin-top: calc(var(--u) * 1.4); }
+.help__text { margin: calc(var(--u) * 2) 0 0; font-size: calc(var(--u) * 3.2); line-height: 1.45; }
+
+.help__link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: calc(var(--u) * 2);
+  min-height: calc(var(--u) * 12);
+  margin-top: calc(var(--u) * 3.4);
+  font-size: calc(var(--u) * 3.6);
+  text-decoration: none;
+}
+.help__phone { width: calc(var(--u) * 5); height: calc(var(--u) * 5); fill: currentColor; }
+.help__card--urgent { border-color: #5cc7a2; background: linear-gradient(180deg, #1f4d3f, #143329); }
+.help__card--urgent .help__name { color: #d6f5e4; }

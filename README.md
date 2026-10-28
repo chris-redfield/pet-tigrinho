@@ -67,17 +67,34 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    home screen they sit in a row under the centred pet, always in view:
    five round icon buttons without panels, each showing its XP:
 
-   | Action   | Rate              | Daily cap   | Feeds      |
-   |----------|-------------------|-------------|------------|
-   | Foto     | +10 XP / photo    | 5 photos    | Felicidade |
-   | Passos   | +10 XP / 1.000    | 15.000      | Saúde      |
-   | Leitura  | +15 XP / 10 pages | 100 pages   | Sabedoria  |
-   | Estudo   | +20 XP / 30 min   | 180 min     | Sabedoria  |
-   | Refeição | +10 XP / meal     | 4 meals     | Saciedade  |
+   | Action   | Rate                   | Daily cap   | Feeds      |
+   |----------|------------------------|-------------|------------|
+   | Foto     | +10 to +20 XP / photo  | 5 photos    | Felicidade |
+   | Passos   | +10 XP / 1.000         | 15.000      | Saúde      |
+   | Leitura  | +15 XP / 10 pages      | 100 pages   | Sabedoria  |
+   | Estudo   | +20 XP / 30 min        | 180 min     | Sabedoria  |
+   | Refeição | +10 XP / meal photo    | 4 meals     | Saciedade  |
+
+   **Photos and meals are checked by the AI** (`server/vision.js`, route
+   `/api/vision`). The photo is shrunk in the browser, sent once to Gemini
+   and dropped; the game keeps nothing. The answer must match a fixed JSON
+   schema or it pays nothing.
+   - *Refeição* is a photo of the plate: it pays only when the AI sees real
+     food (not a drawing, a screen or a closed package). If the AI cannot be
+     reached, the meal cannot be logged for XP until it can.
+   - *Foto* pays by where it was taken, from a published table shown in
+     the sheet before the photo: Natureza or Lugar visitado +20, Trabalho
+     +15, Casa or Outro +10 (`ACTIONS.photo.places`). Drawings, screenshots
+     and photos of screens count as Outro. If the AI cannot be reached, the
+     photo pays the base +10. Same photo, same answer as far as the model
+     allows (temperature 0); it is a rate table, not a draw.
+   - *Estudo* is logged as start and end time ("Registrar Horários de
+     Estudo"); the minutes in between pay, and the times are kept on the
+     log.
 
 3. **Level** — going from Nv L to L+1 costs `L × LEVEL_STEP` (6) XP, so
    Nv 16 is at 720 XP and Nv 36 at 3.780. A normal day lands near 150 XP
-   and a maxed one ~510, so the first evolution is about five days in and
+   and a maxed one ~560, so the first evolution is about five days in and
    the second about three and a half weeks.
 4. **Evolve** — five lines of three forms, Pokémon style, at Nv 16 and
    Nv 36. The tree (14 forms) is data in `src/js/forms.js`:
@@ -158,7 +175,7 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    nothing is phrased as being behind. `state.js` keeps a per-day history
    (`history`, 400 days) for the week column; the lifetime column comes
    from the totals every save has carried since v1.
-9. **Trilhas** — the closed fist in the footer tab bar, with a badge for
+9. **Trilhas** — the paw-print trail in the footer tab bar, with a badge for
    how much of today's trilha is done. One short mission per
    day, on a Duolingo-shaped path: *Dia 1*, *Dia 2*, … Each day asks for a
    few of the same five actions and carries one small thing worth knowing.
@@ -246,16 +263,18 @@ stage.
 ## Run
 
 ES modules need HTTP, so `file://` will not work. The dev server serves
-the game and proxies the Finanças chat to Gemini (Node 20.12+, no deps):
+the game and proxies the Finanças chat and the meal/photo checks to
+Gemini (Node 20.12+, no deps):
 
 ```sh
 cp .env.example .env    # then paste your GEMINI_API_KEY
 node server.js
 ```
 
-Without a key the game still runs; only the Finanças chat says it is not
-configured. A plain `python3 -m http.server 8000` also serves the game, minus
-the chat. Setup, key safety and deploy options: `docs/gemini.md`.
+Without a key the game still runs; the Finanças chat says it is not
+configured, photos pay the base rate and meals cannot be logged for XP. A
+plain `python3 -m http.server 8000` also serves the game, minus the AI.
+Setup, key safety and deploy options: `docs/gemini.md`.
 
 Then <http://localhost:8000>. Query flags: `?debug=1` for a viewport HUD,
 `?reset=1` to wipe the save, `?dev=1` for a dev button on the home screen

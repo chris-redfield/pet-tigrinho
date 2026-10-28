@@ -24,7 +24,7 @@ export const ICONS = {
   send: 'M3 20.4l18-8.4L3 3.6l.1 6.5L15 12 3.1 13.9z',
   mic: 'M12 2.8a3.2 3.2 0 013.2 3.2v6a3.2 3.2 0 01-6.4 0V6A3.2 3.2 0 0112 2.8zM6.4 11.2a.9.9 0 011.8 0 3.8 3.8 0 007.6 0 .9.9 0 011.8 0 5.6 5.6 0 01-4.7 5.5v2.5h2.5a.9.9 0 010 1.8H8.6a.9.9 0 010-1.8h2.5v-2.5a5.6 5.6 0 01-4.7-5.5z',
   crown: 'M3.2 7.4l4.6 4.4L12 4.6l4.2 7.2 4.6-4.4-1.6 10.2H4.8L3.2 7.4zM4.4 19.6h15.2a.9.9 0 010 1.8H4.4a.9.9 0 010-1.8z',
-  fist: 'M4.6 11.6a1.8 1.8 0 013.6 0 1.8 1.8 0 013.6 0 1.8 1.8 0 013.6 0 1.8 1.8 0 013.6 0v3.8a5.4 5.4 0 01-5.4 5.4h-3.6a5.4 5.4 0 01-5.4-5.4v-3.8zM2.8 14.6h7.4a1.9 1.9 0 110 3.8H2.8a1.9 1.9 0 110-3.8z',
+  trail: 'M2.47 18.41a2.14 1.72 40 1 0 3.28 2.75a2.14 1.72 40 1 0 -3.28 -2.75zM2.35 16.41a0.83 0.95 40 1 0 1.27 1.06a0.83 0.95 40 1 0 -1.27 -1.06zM4.6 16.23a0.88 1.02 40 1 0 1.35 1.14a0.88 1.02 40 1 0 -1.35 -1.14zM6.17 17.54a0.88 1.02 40 1 0 1.35 1.14a0.88 1.02 40 1 0 -1.35 -1.14zM6.47 19.87a0.83 0.95 40 1 0 1.27 1.06a0.83 0.95 40 1 0 -1.27 -1.06zM9.97 11.41a2.14 1.72 40 1 0 3.28 2.75a2.14 1.72 40 1 0 -3.28 -2.75zM9.85 9.41a0.83 0.95 40 1 0 1.27 1.06a0.83 0.95 40 1 0 -1.27 -1.06zM12.1 9.23a0.88 1.02 40 1 0 1.35 1.14a0.88 1.02 40 1 0 -1.35 -1.14zM13.67 10.54a0.88 1.02 40 1 0 1.35 1.14a0.88 1.02 40 1 0 -1.35 -1.14zM13.97 12.87a0.83 0.95 40 1 0 1.27 1.06a0.83 0.95 40 1 0 -1.27 -1.06zM17.37 4.41a2.14 1.72 40 1 0 3.28 2.75a2.14 1.72 40 1 0 -3.28 -2.75zM17.25 2.41a0.83 0.95 40 1 0 1.27 1.06a0.83 0.95 40 1 0 -1.27 -1.06zM19.5 2.23a0.88 1.02 40 1 0 1.35 1.14a0.88 1.02 40 1 0 -1.35 -1.14zM21.07 3.54a0.88 1.02 40 1 0 1.35 1.14a0.88 1.02 40 1 0 -1.35 -1.14zM21.37 5.87a0.83 0.95 40 1 0 1.27 1.06a0.83 0.95 40 1 0 -1.27 -1.06z',
   plus: 'M10.8 3.4h2.4v7.4h7.4v2.4h-7.4v7.4h-2.4v-7.4H3.4v-2.4h7.4V3.4z',
   check: 'M20.3 5.4L22 7.1 9.2 19.9 2 12.7l1.7-1.7 5.5 5.5L20.3 5.4z',
   star: 'M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5-5.8-3.1-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9L12 2.6z',
@@ -49,6 +49,18 @@ export const ACTIONS = {
     unit: 'foto', unitPlural: 'fotos',
     xp: 10, step: 1, cap: 5,
     capture: true,
+    // The AI names where the photo was taken; each place pays a fixed,
+    // published amount (listed in the sheet before the photo is taken), so
+    // going out pays more than staying in - it is a rate table, not a draw.
+    // `xp` above is what a photo pays when the AI cannot be reached.
+    verify: 'photo',
+    places: {
+      natureza: { label: 'Natureza',       emoji: '🌳', xp: 20 },
+      passeio:  { label: 'Lugar visitado', emoji: '📍', xp: 20 },
+      trabalho: { label: 'Trabalho',       emoji: '💼', xp: 15 },
+      casa:     { label: 'Casa',           emoji: '🏠', xp: 10 },
+      outro:    { label: 'Outro',          emoji: '📷', xp: 10 },
+    },
   },
   steps: {
     label: 'Passos', verb: 'Registrar passos',
@@ -64,16 +76,19 @@ export const ACTIONS = {
     xp: 15, step: 10, cap: 100,
   },
   course: {
-    label: 'Estudo', verb: 'Registrar estudo',
+    label: 'Estudo', verb: 'Registrar Horários de Estudo',
     rate: '30 min',
     unit: 'minuto', unitPlural: 'minutos',
     xp: 20, step: 30, cap: 180,
+    schedule: true,   // logged as a start and end time
   },
   meal: {
-    label: 'Refeição', verb: 'Registrar refeição',
+    label: 'Refeição', verb: 'Foto da refeição',
     rate: 'refeição',
     unit: 'refeição', unitPlural: 'refeições',
     xp: 10, step: 1, cap: 4,
+    capture: true,
+    verify: 'meal',   // pays only if the AI sees food in the photo
   },
 };
 

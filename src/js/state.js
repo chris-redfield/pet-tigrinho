@@ -375,9 +375,14 @@ export function remainingToday(type) {
  * Reaching an evolution level does not evolve the pet: it makes it ready,
  * and the home screen evolves it automatically (see `evolve`).
  *
+ * A photo can name its `place` (from the AI check): each place has its own
+ * fixed rate in `ACTIONS.photo.places`. A study session can carry its
+ * `from`/`to` times, kept on the log.
+ *
+ * @param {{place?: string, from?: string, to?: string}} [details]
  * @returns {{gained:number, paidUnits:number, cappedUnits:number, ready:boolean}}
  */
-export function logAction(type, units) {
+export function logAction(type, units, details = {}) {
   rollDay();
   const cfg = ACTIONS[type];
   if (!cfg) throw new Error(`unknown action: ${type}`);
@@ -385,8 +390,10 @@ export function logAction(type, units) {
   units = Math.max(0, Math.round(units));
   if (!units) return { gained: 0, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
 
+  const place = cfg.places?.[details.place] ? details.place : null;
+  const rate = place ? cfg.places[place].xp : cfg.xp;
   const paidUnits = Math.min(units, remainingToday(type));
-  const gained = Math.round((paidUnits / cfg.step) * cfg.xp);
+  const gained = Math.round((paidUnits / cfg.step) * rate);
 
   state.xp += gained;
   state.totals[type] += units;
@@ -394,7 +401,10 @@ export function logAction(type, units) {
   state.daily[type] = (state.daily[type] || 0) + paidUnits;
   recordDay(type, units, gained);
 
-  state.log.unshift({ type, units, gained, at: new Date().toISOString() });
+  const entry = { type, units, gained, at: new Date().toISOString() };
+  if (place) entry.place = place;
+  if (details.from && details.to) Object.assign(entry, { from: details.from, to: details.to });
+  state.log.unshift(entry);
   state.log.length = Math.min(state.log.length, 100);
 
   persist();

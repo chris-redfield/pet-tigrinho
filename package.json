@@ -8,6 +8,6 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node test/state.test.mjs && node test/pedometer.test.mjs && node test/gemini.test.mjs && node test/chatter.test.mjs"
+    "test": "node test/state.test.mjs && node test/pedometer.test.mjs && node test/gemini.test.mjs && node test/chatter.test.mjs && node test/vision.test.mjs"
   }
 }

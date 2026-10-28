@@ -457,6 +457,95 @@
   margin-bottom: calc(var(--u) * 3);
 }
 
+/* What the photo is for, and that it is not kept. */
+.sheet__hint {
+  margin: calc(var(--u) * -2) 0 calc(var(--u) * 3);
+  text-align: center;
+  font-size: calc(var(--u) * 3);
+  line-height: 1.4;
+  color: var(--c-ink-dim);
+}
+.sheet__privacy {
+  margin: calc(var(--u) * 3) 0 0;
+  text-align: center;
+  font-size: calc(var(--u) * 2.5);
+  color: var(--c-ink-dim);
+  opacity: .8;
+}
+
+/* Photo rates by place, shown before the photo is taken. */
+.rates {
+  list-style: none;
+  margin: 0 0 calc(var(--u) * 3);
+  padding: 0;
+  display: grid;
+  gap: calc(var(--u) * 1.4);
+}
+.rates[hidden] { display: none; }
+.rates__item {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 2.4);
+  padding: calc(var(--u) * 1.6) calc(var(--u) * 3);
+  border-radius: var(--r-sm);
+  background: #2a06094d;
+  font-size: calc(var(--u) * 3.2);
+}
+.rates__emoji { font-size: calc(var(--u) * 4); }
+.rates__label { flex: 1 1 auto; font-weight: 700; }
+.rates__xp { font-weight: 800; color: var(--c-gold); font-variant-numeric: tabular-nums; }
+.rates__xp::after { content: " XP"; font-size: .8em; }
+
+/* The AI's answer about the photo. */
+.verdict {
+  margin: calc(var(--u) * -1) 0 calc(var(--u) * 3);
+  padding: calc(var(--u) * 2) calc(var(--u) * 3);
+  border-radius: var(--r-sm);
+  border: var(--edge) solid var(--c-gold-dim);
+  background: #2a06094d;
+  text-align: center;
+  font-size: calc(var(--u) * 3.3);
+  font-weight: 800;
+  line-height: 1.35;
+}
+.verdict[data-state="busy"] { color: var(--c-ink-dim); animation: verdict-wait 1.2s ease-in-out infinite; }
+.verdict[data-state="done"] { border-color: var(--jade-300); color: var(--jade-100); }
+.verdict[data-state="no"],
+.verdict[data-state="error"] { border-color: #ffb37a99; color: #ffb37a; }
+@keyframes verdict-wait { 50% { opacity: .55; } }
+
+/* Study schedule: start and end time. */
+.time {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(var(--u) * 3);
+  margin-bottom: calc(var(--u) * 3);
+}
+.time__field {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 1);
+  font-size: calc(var(--u) * 2.8);
+  font-weight: 700;
+  color: var(--c-ink-dim);
+}
+.time__input {
+  width: calc(var(--u) * 30);
+  padding: calc(var(--u) * 2) calc(var(--u) * 2.4);
+  border-radius: var(--r-sm);
+  border: var(--edge) solid var(--c-gold-dim);
+  background: var(--red-900);
+  color: var(--c-ink);
+  font: inherit;
+  font-size: calc(var(--u) * 5);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  color-scheme: dark;
+}
+.time__dash { padding-bottom: calc(var(--u) * 2.6); font-size: calc(var(--u) * 5); color: var(--c-gold); }
+.time + .amount { margin-bottom: calc(var(--u) * 2); }
+
 /* ---------- evolution ---------- */
 
 .evolve {

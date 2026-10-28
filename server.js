@@ -1,5 +1,6 @@
 /**
- * Dev server: serves the game and proxies the finance chat to Gemini.
+ * Dev server: serves the game and proxies the finance chat and the
+ * meal/photo checks to Gemini.
  *
  * Zero dependencies, Node 20.12+. The Gemini API key lives only here (read
  * from .env), never in the browser - anything shipped to the page can be
@@ -13,6 +14,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { API_BASE, buildRequest, cleanHistory, extractReply, isRetryable, modelChain } from './server/gemini.js';
+import { MAX_IMAGE_CHARS, buildVisionRequest, cleanVision, extractVision } from './server/vision.js';
 
 try { process.loadEnvFile(); } catch { /* no .env: the chat reports it is not configured */ }
 
@@ -26,7 +28,7 @@ const MODELS = modelChain(process.env.GEMINI_MODEL || undefined,
 const ATTEMPT_MS = 20_000;
 /** Behind a host's proxy (Render, Railway...) every request comes from the proxy's IP. */
 const TRUST_PROXY = process.env.TRUST_PROXY === '1';
-/** Chat requests allowed per day across all players - a hard stop on API spend. */
+/** Chat and image requests allowed per day across all players - a hard stop on API spend. */
 const DAILY_LIMIT = Number(process.env.DAILY_LIMIT) || 300;
 
 const TYPES = {
@@ -116,6 +118,42 @@ async function financeChat(req, res) {
     return send(res, 400, { error: err.message || 'Pedido inválido.' });
   }
 
+  const out = await askGemini('chat', (model) => buildRequest(history, model), extractReply);
+  send(res, out.status, out.value ? { reply: out.value } : { error: out.error });
+}
+
+/** Meal and photo checks: one image in, a validated JSON answer out. */
+async function visionCheck(req, res) {
+  if (!API_KEY) {
+    return send(res, 503, { error: 'A IA ainda não foi configurada. Veja docs/gemini.md.' });
+  }
+  if (rateLimited(clientIp(req), 10)) {
+    return send(res, 429, { error: 'Muitas fotos seguidas. Espere um minuto.' });
+  }
+  if (dailyCapReached()) {
+    return send(res, 429, { error: 'A IA atingiu o limite de hoje. Volte amanhã!' });
+  }
+
+  let input;
+  try {
+    input = cleanVision(await readJson(req, MAX_IMAGE_CHARS + 1_000));
+  } catch (err) {
+    return send(res, 400, { error: err.message || 'Pedido inválido.' });
+  }
+
+  const out = await askGemini(input.kind, (model) => buildVisionRequest(input, model),
+    (json) => extractVision(input.kind, json));
+  send(res, out.status, out.value ? { result: out.value } : { error: out.error });
+}
+
+/**
+ * Runs one request down the model chain: an overloaded, rate-limited or
+ * slow model hands over to the next. `extract` turns the response into the
+ * value to return, or null when it is unusable (that also moves on).
+ *
+ * @returns {Promise<{status: number, value?: unknown, error?: string}>}
+ */
+async function askGemini(tag, build, extract) {
   let timedOut = false;
 
   for (const model of MODELS) {
@@ -124,37 +162,39 @@ async function financeChat(req, res) {
       const upstream = await fetch(`${API_BASE}/${encodeURIComponent(model)}:generateContent`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': API_KEY },
-        body: JSON.stringify(buildRequest(history, model)),
+        body: JSON.stringify(build(model)),
         signal: AbortSignal.timeout(ATTEMPT_MS),
       });
       const json = await upstream.json().catch(() => null);
       if (!upstream.ok) {
-        console.error(`[gemini] ${model} ${upstream.status}: ${json?.error?.message}`);
+        console.error(`[gemini] ${tag} ${model} ${upstream.status}: ${json?.error?.message}`);
         if (isRetryable(upstream.status, json?.error?.message)) continue;
-        return send(res, 502, { error: 'A IA não respondeu agora. Tente de novo em instantes.' });
+        return { status: 502, error: 'A IA não respondeu agora. Tente de novo em instantes.' };
       }
-      const reply = extractReply(json);
-      if (!reply) {
-        console.error(`[gemini] ${model} sem texto (${json?.candidates?.[0]?.finishReason})`);
+      const value = extract(json);
+      if (value == null) {
+        console.error(`[gemini] ${tag} ${model} sem resposta válida (${json?.candidates?.[0]?.finishReason})`);
         continue;
       }
-      console.log(`[gemini] ${model} respondeu em ${Date.now() - started}ms`);
-      return send(res, 200, { reply });
+      console.log(`[gemini] ${tag} ${model} respondeu em ${Date.now() - started}ms`);
+      return { status: 200, value };
     } catch (err) {
       timedOut ||= err.name === 'TimeoutError';
-      console.error(`[gemini] ${model} ${err.name} após ${Date.now() - started}ms`);
+      console.error(`[gemini] ${tag} ${model} ${err.name} após ${Date.now() - started}ms`);
     }
   }
 
-  send(res, timedOut ? 504 : 503, {
+  return {
+    status: timedOut ? 504 : 503,
     error: timedOut
       ? 'A IA demorou demais. Tente de novo.'
       : 'A IA está sobrecarregada agora. Tente de novo em alguns instantes.',
-  });
+  };
 }
 
 const server = createServer((req, res) => {
   if (req.url === '/api/finance' && req.method === 'POST') return financeChat(req, res);
+  if (req.url === '/api/vision' && req.method === 'POST') return visionCheck(req, res);
   if (req.method === 'GET' || req.method === 'HEAD') return serveStatic(req, res);
   send(res, 405, 'Method not allowed', 'text/plain');
 });

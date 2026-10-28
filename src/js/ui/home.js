@@ -109,11 +109,16 @@ export function renderHome(host) {
     for (const [type, { button, rate }] of buttons) {
       const cfg = ACTIONS[type];
       const left = remainingToday(type);
+      // A photo pays by place, so its button shows the range.
+      const xps = cfg.places ? Object.values(cfg.places).map((p) => p.xp) : [cfg.xp];
+      const lo = Math.min(...xps);
+      const hi = Math.max(...xps);
+      const pays = lo === hi ? `+${lo} XP` : `+${lo}–${hi} XP`;
       button.dataset.done = String(left === 0);
-      rate.textContent = left === 0 ? '✓ hoje' : `+${cfg.xp} XP`;
+      rate.textContent = left === 0 ? '✓ hoje' : pays;
       button.setAttribute('aria-label', left === 0
         ? `${cfg.label}: concluído hoje`
-        : `${cfg.label}: +${cfg.xp} XP por ${cfg.rate}`);
+        : `${cfg.label}: ${pays} por ${cfg.rate}`);
     }
   }
 

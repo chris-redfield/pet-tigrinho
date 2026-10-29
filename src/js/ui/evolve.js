@@ -1,5 +1,6 @@
 import { h } from './dom.js';
 import { reducedMotion } from '../motion.js';
+import { evolveTune } from '../sfx.js';
 
 /**
  * Evolution reveal, Pokemon style.
@@ -58,7 +59,10 @@ export function showEvolution(host, form, opts = {}) {
     setTimeout(() => {
       overlay.dataset.phase = 'reveal';
       overlay.querySelector('.evolve__kicker').textContent = 'Seu tigrinho evoluiu!';
+      evolveTune();
     }, 1400);
+  } else {
+    evolveTune();
   }
   overlay.querySelector('.btn').focus({ preventScroll: true });
 }

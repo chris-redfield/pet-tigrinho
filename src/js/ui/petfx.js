@@ -1,5 +1,7 @@
 import { h } from './dom.js';
 import { reducedMotion } from '../motion.js';
+import { haptic } from '../settings.js';
+import { play, pat } from '../sfx.js';
 
 /**
  * Small "juice" effects around the pet: hearts on a tap, a speech bubble,
@@ -59,6 +61,8 @@ export function hearts(stage, at) {
   const off = at ? Math.max(-1, Math.min(1, (x - box.width / 2) / (box.width / 4))) : 0.6;
   stage.style.setProperty('--lean', `${(off * 6).toFixed(1)}deg`);
   replay(stage, 'pet-stage--pet');
+  haptic(10);
+  pat();
 }
 
 /** A speech bubble above the pet; a new line replaces the current one. */
@@ -106,6 +110,8 @@ export function celebrateGain(screen, stage, bar, gained, { before, levelUp, onL
     setTimeout(() => { bar.classList.remove('xpbar--grow'); then?.(); }, 1150);
   };
   const land = () => {
+    haptic(levelUp ? [20, 60, 30] : 18);
+    play('gain');
     replay(bar, 'xpbar--gain');
     if (!levelUp) { grow(after); return; }
     // Full, then empty in one frame, then up to the new level's share.

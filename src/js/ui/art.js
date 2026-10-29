@@ -24,6 +24,11 @@ export function eggArt({ shell, band, speck }) {
     svg('path', { d: EGG_PATH, fill: 'none', stroke: '#00000038', 'stroke-width': 2.5 }));
 }
 
+/** The trilha coin (a Chinese cash coin). Decorative: the number beside it carries the meaning. */
+export function coinArt(className) {
+  return h('img', { class: className, src: 'assets/fx/coin.webp', alt: '', 'aria-hidden': 'true' });
+}
+
 /** 24x24 line-art glyph from a path string in config.ICONS. */
 export function iconArt(d, className) {
   return svg('svg', { viewBox: '0 0 24 24', 'aria-hidden': 'true', class: className },

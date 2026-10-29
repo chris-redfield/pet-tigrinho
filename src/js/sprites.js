@@ -2,10 +2,14 @@
 export const SPRITES = [
   'tigrin',
   'estreliger',
+  'tigran',
   'tigre-cosmico',
+  'tigre-sabio',
   'brasinha',
   'tigre-fornalha',
+  'vulcaniger',
   'mechatigre',
+  'magmatigreo',
   'tigre-dagua',
   'oceaniger',
   'neviger',
@@ -13,7 +17,9 @@ export const SPRITES = [
   'tigre-glacial',
   'folhiger',
   'floriger',
+  'tigrelis',
   'tigre-yggdrasil',
+  'parasitigre',
 ];
 
 export const ICON_ART = [

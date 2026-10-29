@@ -10,8 +10,9 @@ import { openEncyclopedia } from './encyclopedia.js';
 import { startTour } from './tour.js';
 
 /**
- * Pet info screen: name, level, rarity, status bars, the next evolution,
- * the encyclopedia and, once the pet is in its final form, a new egg.
+ * Pet info, the Informações tab of the profile: name, level, rarity, status
+ * bars, the next evolution, the encyclopedia and, once the pet is in its
+ * final form, a new egg.
  *
  * The status bars have no "low" colour and no warning - an empty bar just
  * means that kind of action has not been logged this phase. The evolution
@@ -19,19 +20,15 @@ import { startTour } from './tour.js';
  * and what each branch asks for, so the branch is always a choice the
  * player can see coming, never a surprise.
  *
- * @param {HTMLElement} host     element to mount into
- * @param {() => void}  onClose  called after the screen is dismissed
+ * @param {HTMLElement} screen  the profile screen, for overlays opened from here
+ * @param {() => void}  close   closes the profile
+ * @returns {HTMLElement} the tab's scrolling body
  */
-export function openInfo(host, onClose) {
+export function renderInfo(screen, close) {
   const form = currentForm();
   const rarity = RARITIES[form.rarity];
   const lv = level();
   const bars = stats();
-
-  const close = () => {
-    screen.remove();
-    onClose?.();
-  };
 
   // ---------- name ----------
 
@@ -128,7 +125,8 @@ export function openInfo(host, onClose) {
     // discovered: the name and the rule stay visible, only the look waits.
     const known = discovered().has(branch.form.id);
     const peek = h('div', { class: 'evo__peek' },
-      h('img', { class: `evo__art${known ? '' : ' silhouette'}`, src: branch.form.art, alt: '' }),
+      h('img', { class: `evo__art${known ? '' : ' silhouette'}`, src: branch.form.art, alt: '',
+        loading: 'lazy', decoding: 'async' }),
       !known && h('span', { class: 'evo__mark', 'aria-hidden': 'true', text: '?' }));
 
     return h('section', { class: 'info__card panel' },
@@ -207,24 +205,15 @@ export function openInfo(host, onClose) {
     onclick: () => { close(); startTour(); },
   });
 
-  // ---------- frame ----------
-
-  const screen = h('div', { class: 'info', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Informações do pet' },
-    h('div', { class: 'info__bar' },
-      h('button', { class: 'info__back', type: 'button', 'aria-label': 'Voltar', onclick: close },
-        iconArt(ICONS.back, 'info__back-icon')),
-      h('div', { class: 'info__title', text: 'Informações' })),
-    h('div', { class: 'info__body', dataset: { scroll: '' } },
-      h('div', { class: 'info__hero' },
-        h('img', { class: 'info__art', src: form.art, alt: '' }),
-        h('div', { class: 'info__namerow' }, nameText, nameInput, editBtn)),
-      progressPanel,
-      statusPanel,
-      evolvePanel,
-      encyclopedia,
-      newEgg,
-      hint,
-      replayTour));
-
-  host.append(screen);
+  return h('div', { class: 'info__body', dataset: { scroll: '' } },
+    h('div', { class: 'info__hero' },
+      h('img', { class: 'info__art', src: form.art, alt: '' }),
+      h('div', { class: 'info__namerow' }, nameText, nameInput, editBtn)),
+    progressPanel,
+    statusPanel,
+    evolvePanel,
+    encyclopedia,
+    newEgg,
+    hint,
+    replayTour);
 }

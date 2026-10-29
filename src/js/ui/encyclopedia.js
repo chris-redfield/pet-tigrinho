@@ -40,7 +40,8 @@ export function openEncyclopedia(host, onClose) {
     const known = seen.has(form.id);
     const tier = RARITIES[form.rarity];
     return h('li', { class: 'ency__card', dataset: { known: String(known) } },
-      h('img', { class: `ency__art${known ? '' : ' silhouette'}`, src: form.art, alt: '' }),
+      h('img', { class: `ency__art${known ? '' : ' silhouette'}`, src: form.thumb, alt: '',
+        loading: 'lazy', decoding: 'async' }),
       known
         ? h('div', { class: 'ency__info' },
             h('div', { class: 'ency__name', text: form.name }),

@@ -8,7 +8,9 @@ Turns source art into game sprites and wires them in.
 
 For every form in src/js/forms.js that has `assets/source/<id>.png`:
 crop to the alpha bounds, resize to 900px wide and save
-`assets/pet/<id>.webp`.
+`assets/pet/<id>.webp`, plus a 288px wide thumbnail at
+`assets/pet/thumb/<id>.webp` for the small pictures (Enciclopédia, the
+next-evolution peek), so those screens do not download the full art.
 
 For every action in src/js/config.js that has
 `assets/source/icons/<action>.png`: crop to the alpha bounds, centre on a
@@ -39,6 +41,8 @@ CONFIG = ROOT / 'src/js/config.js'
 MANIFEST = ROOT / 'src/js/sprites.js'
 
 WIDTH = 900
+THUMB_WIDTH = 288
+THUMBS = PET / 'thumb'
 ICON_SIZE = 256
 KNOCKOUT_THRESHOLD = 40  # colour distance still counted as background
 OPAQUE = 16              # corner alpha above this means a painted background
@@ -86,8 +90,10 @@ def process(fid, src, out, clear):
     im = load(fid, src, clear)
     if im is None:
         return
-    im = im.resize((WIDTH, round(im.height * WIDTH / im.width)), Image.LANCZOS)
-    im.save(out, 'WEBP', quality=90, method=6)
+    full = im.resize((WIDTH, round(im.height * WIDTH / im.width)), Image.LANCZOS)
+    full.save(out, 'WEBP', quality=90, method=6)
+    thumb = im.resize((THUMB_WIDTH, round(im.height * THUMB_WIDTH / im.width)), Image.LANCZOS)
+    thumb.save(THUMBS / out.name, 'WEBP', quality=88, method=6)
     print(f'  + {fid}: {out.relative_to(ROOT)}')
 
 
@@ -115,10 +121,11 @@ def main(args):
     clear = '--knockout' in args
     ids, actions = form_ids(), action_ids()
     ICONS.mkdir(parents=True, exist_ok=True)
+    THUMBS.mkdir(parents=True, exist_ok=True)
 
     for fid in ids:
         src, out = SOURCE / f'{fid}.png', PET / f'{fid}.webp'
-        if stale(src, out, force):
+        if stale(src, out, force) or not (THUMBS / out.name).exists():
             process(fid, src, out, clear)
     for aid in actions:
         src, out = ICON_SOURCE / f'{aid}.png', ICONS / f'{aid}.webp'

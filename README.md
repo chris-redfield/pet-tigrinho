@@ -13,8 +13,8 @@ The audience is people whose reward circuitry has been trained by a slot
 machine. The game must not re-train it.
 
 - **No variable-ratio rewards.** Every action pays a flat, published rate.
-  The XP is printed on the face of every button and recomputed live in the
-  log sheet *before* the player commits. No roll, no range, no luck multiplier.
+  The XP is shown in each action's log sheet, opened by tapping it, and
+  recomputed live there *before* the player commits. No roll, no range, no luck multiplier.
 - **No spin, no reels, no near-miss.** Nothing resolves after a suspenseful
   delay, and nothing ever shows the player what they *almost* got.
 - **No losable currency or streak.** Lifetime XP only goes up. There is
@@ -65,15 +65,18 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    flat SVG eggs are used.
 
    Right after the first hatch a short **tour** (`src/js/ui/tour.js`)
-   opens: Tigrin walks through the pet, the action row, the XP bar, info,
-   conquistas and the Trilhas, Finanças and Ajuda tabs, one spotlight at
-   a time (10 steps, Voltar/Próximo, arrow keys, Esc or *Pular* to skip).
+   opens: Tigrin walks through the pet, the action row, the XP bar, the
+   coins, the profile, the Trilhas, Progresso and Finanças tabs and where
+   help is, one spotlight at a time (11 steps, Voltar/Próximo, arrow keys, Esc or *Pular* to skip).
    It opens once (`onboarded` in the save; saves from before it count as
-   seen) and can be replayed from the info screen. A step whose element
+   seen) and can be replayed from Perfil > Informações. A step whose element
    is not on screen falls back to a centred card.
 2. **Log real-world actions** — five of them, each a flat XP rate. On the
    home screen they sit in a row under the centred pet, always in view:
-   five round icon buttons without panels, each showing its XP:
+   five round icon buttons without panels. The XP is not printed under
+   them, to keep the scene clean; tapping one opens its sheet, which shows
+   the rate before anything is logged. Once an action is done for the day
+   its button dims and shows "✓ hoje":
 
    | Action   | Rate                   | Daily cap   | Feeds      |
    |----------|------------------------|-------------|------------|
@@ -105,24 +108,34 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    second in about a week. (The XP rates were raised 4× on 2026-10-28 so
    the first evolution comes quickly; levels were left as they were.)
 
-   On the home screen the header shows only the level ("Nv. 5") and the
-   XP bar under it is the way to the *next level*, with "into / span"
-   (e.g. "12 / 42") in small print beneath. When a gain crosses a level,
-   the bar fills up, starts over from empty and grows to the new level's
-   share, and the level in the header pops.
-4. **Evolve** — five lines of three forms, Pokémon style, at Nv 16 and
-   Nv 36. The tree (14 forms) is data in `src/js/forms.js`:
+   On the home screen the level is a round badge ("5") on the left end of
+   the XP bar, and the bar is the way to the *next level*, with "into /
+   span" (e.g. "12 / 42") in small print beneath. When a gain crosses a
+   level, the bar fills up, starts over from empty and grows to the new
+   level's share, and the badge pops.
+4. **Evolve** — eight lines of three forms, Pokémon style, at Nv 16 and
+   Nv 36. The tree (20 forms) is data in `src/js/forms.js`:
 
    | Egg      | Comum    | Raro (Nv 16)   | Lendário (Nv 36) |
    |----------|----------|----------------|------------------|
    | Branco   | Tigrin   | Estreliger     | Tigre Cósmico    |
+   | Branco   | Tigrin   | Tigran         | Tigre Sábio      |
    | Vermelho | Brasinha | Tigre-Fornalha | Mechatigre       |
+   | Vermelho | Brasinha | Vulcaniger     | Magmatígreo      |
    | Azul     | Tigre d'Água | Oceaniger  | Tigre-Leviatã    |
    | Azul     | Tigre d'Água | Neviger    | Tigre-Glacial    |
    | Verde    | Folhiger | Floriger       | Tigre-Yggdrasil  |
+   | Verde    | Folhiger | Tigrelis       | Parasitigre      |
 
-   Only the Azul egg branches: at Nv 16 Tigre d'Água becomes Oceaniger
-   (Felicidade ≥ 70%) or Neviger (Sabedoria ≥ 60% and Saúde ≥ 60%). Rule
+   Every egg branches at Nv 16. Tigrin becomes
+   Estreliger, the explorer (Felicidade ≥ 50% and Saúde ≥ 50%: photos and
+   steps), or Tigran, the scholar (Sabedoria ≥ 70%: reading and study).
+   Brasinha becomes Tigre-Fornalha, the forge (Sabedoria ≥ 50% and
+   Saciedade ≥ 50%: study and meals), or Vulcaniger, the eruption (Saúde ≥
+   60%: steps). Folhiger becomes Floriger, the bloom (Felicidade ≥ 60%:
+   photos), or Tigrelis, the fungus (Saciedade ≥ 60%: meals). Tigre d'Água
+   becomes Oceaniger (Felicidade ≥ 70%) or Neviger (Sabedoria ≥ 60% and
+   Saúde ≥ 60%). Rule
    (`pickBranch` in `src/js/state.js`): each route's *margin* is how far
    its weakest required bar is above (or below) its requirement, and the
    largest margin wins. So if only one route is met, it wins; if both are
@@ -181,7 +194,46 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    medals and the encyclopedia carry over, the retired pet is kept in
    `retired`, and its XP still counts in the lifetime total. Choosing a new
    egg is optional and never prompted.
-8. **Conquistas** — the crown in the middle of the home header. Everything
+8. **Perfil** — the person button in the top-right corner of the home
+   screen (the coins sit top left, the pet's name between them). One
+   screen with three tabs (`src/js/ui/profile.js`):
+   - **Informações** — the pet: name, level, rarity, status bars, next
+     evolution, Enciclopédia, new egg, replay the tour (`info.js`).
+   - **Conquistas** — below.
+   - **Configurações** (`src/js/settings.js`, its own key, this device
+     only): *Som* (volume and background music: one calm loop,
+     `assets/audio/forest.mp3`, "forest" by syncopika, credited under
+     *Créditos*; `src/js/music.js` fetches and starts it on the first tap (only if it is on), as browsers
+     require, fades it in and out and pauses it while the game is out of
+     view; and *Efeitos sonoros*, `src/js/sfx.js`: just three — a soft
+     synthesized tick on buttons, a soft synthesized scratch on every
+     pet tap (filtered noise that swells in and out, no hit; each tap
+     starts a fresh one that overlaps the last, so fast taps pile up into
+     a scritch), one short tone when XP lands in the bar, from
+     "SoundPack01", converted to a small mono WAV in `assets/audio/sfx/`,
+     and a soft synthesized two-note chime (G5 then B5, quiet, ringing
+     out in ~0.7 s) each time an activity is logged (from the home buttons
+     or a trilha card) and when a trilha day is finished, plus a short warm
+     tune at the evolution reveal (five soft bell notes up a major chord,
+     then the chord rings out, ~2.5 s) — the one big moment, earned over
+     weeks, never on a tap, and kept soft so it reads as a milestone, not
+     a jackpot. The egg pick has its own little foley, all synthesized:
+     each egg lands like a marimba bar (C, E, G, high C, so the four drops
+     play a rising chord, and each bounce rings its note again, softer),
+     the chosen egg knocks and cracks faster and faster, and the hatch is
+     a crunch of shell, a rising "pop" and a short run of sparkles. The
+     very first drop on a first visit is silent: browsers allow no sound
+     before the player touches the page. No coin sound, no jingle, nothing looped),
+     *Notificações* (phone alerts, asking the
+     browser; daily reminders for the risk hours and, after 19h, when
+     nothing was logged — sent only while the game is open, even in the
+     background, since reminders with it closed need push), *Preferências*
+     (language: Português, English planned; vibration on petting and XP),
+     *Conta e dados* (login, locked for now; erase everything and start
+     over, with a second tap to confirm) and the app version
+     (`APP_VERSION`, v0.1.0).
+
+   **Conquistas**: everything
    the player has done, as **Sempre** or **Esta semana** (segunda a
    domingo, `WEEK_STARTS_ON` in `config.js`): XP, active days, trilhas,
    units per action, plus the medals in `src/js/medals.js`. It is a record,
@@ -200,6 +252,49 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    streak — a skipped day loses nothing, the trilha is simply still there.
    The days are data in `src/js/trilhas.js`, and the list wraps, so the
    path never runs out.
+
+   Finishing a trilha also pays **coins** (`TRILHA_COINS`, 3, fixed and
+   printed on the card): a Chinese cash coin (`assets/fx/coin.webp`), the
+   trilha's own reward and the only source of coins. The balance sits in the
+   top-left corner of the home screen (the pet's name is centred over the
+   XP bar), and at the top of the Trilhas screen;
+   a tap opens the **Loja** (`src/js/ui/shop.js`), which is locked ("Em
+   breve") until the adornos are decided. When it opens, every item is
+   shown with its fixed price and bought as seen — no boxes, rolls or
+   surprise items, no timed offers, and coins are never sold for money.
+   Coins carry over to a new egg; saves from before them are paid for the
+   trilhas already finished.
+10. **Progresso** — the recovery indicators, so the project can show it
+    helps rather than only that it is liked. One card each
+    (`src/js/ui/progress.js`, data and rules in `src/js/recovery.js`):
+    - *Dias sem apostar*: once a week, "in how many of the last 7 days did
+      you not bet?" (0–7), shown as bars for the last 8 weeks. Not a streak:
+      the answer can be changed during the week, a hard week is just a
+      lower bar, and nothing resets. The first answer each week pays a flat
+      `CHECKIN_XP` (20) whatever the number, so honesty never costs XP.
+    - *Gravidade (PGSI)*: the 9-question Problem Gambling Severity Index
+      (0–27, published bands), at the start (last 12 months), then at 3 and
+      6 months and every 3 months after (last 3 months), shown as
+      "15 → 7". A moderate or problem result points to *Onde buscar ajuda*.
+    - *Peso das dívidas*: income, monthly payments on betting debts and the
+      balance still owed, once a month; shows the share of income and the
+      first-to-latest change in share and balance.
+    - *Chegada ao cuidado*: saw a contact → booked → went to the first
+      appointment, ticked by the player; opening any link in *Onde buscar ajuda*
+      ticks the first step.
+    - *Rotina de volta*: the hours betting used to happen and an action to
+      do instead. Inside that window Tigrin calls the player to it once a
+      day on the home screen, and the card shows on how many days this
+      week an action was logged in the window.
+
+    **Onde buscar ajuda** (`src/js/ui/help.js`: Meu SUS Digital, UBS/CAPS,
+    Jogadores Anônimos, CVV 188) has no tab of its own: the green *Ajuda*
+    button at the top of Progresso opens it over the screen, with a back
+    button to return, and the PGSI and care cards link to it too.
+
+    Sensitive by nature, so it lives in its own key
+    (`pet-tigrinho:recovery`), on this device only, and is never sent
+    anywhere. `?reset` clears it too.
 
 A form without its own sprite borrows Tigrin's until it lands (see *Art
 pipeline*). v1 saves migrate to a Tigrin that keeps its XP, totals and
@@ -300,10 +395,23 @@ effects on a machine with the system's reduce motion on (egg drop,
 evolution charge, petting wiggle - see `src/js/motion.js`).
 
 ```sh
-node test/state.test.mjs
-node test/pedometer.test.mjs
-node test/gemini.test.mjs
+for f in test/*.test.mjs; do node "$f"; done
 ```
+
+What `server.js` serves and how:
+
+- **Not served:** `.env`, the server code, and what the game never needs
+  at runtime — `assets/source/` (24 MB of original art), `docs/`, `test/`,
+  `tools/`, `package*.json`, `.claude/`, `.mcp.json`. A host that serves
+  the folder as plain static files (GitHub Pages, Netlify) does not apply
+  this list, so leave those folders out of the upload there.
+- **Caching:** `assets/` and `src/vendor/` may be kept an hour; code and
+  pages are revalidated on every load. Every file carries `Last-Modified`,
+  so an unchanged one costs a 304, not its bytes.
+- **Audio:** `.mp3`/`.wav` get their real types and byte ranges, which
+  Safari needs to play them.
+- **`sw.js`** (a service worker) is registered on HTTPS/localhost only so
+  reminders can show on Android. It caches nothing on purpose.
 
 On a phone: the camera works over plain HTTP, but the step sensor only
 works over HTTPS, so test from an HTTPS URL (a tunnel or GitHub Pages)
@@ -322,7 +430,8 @@ python3 tools/sprites.py              # needs Pillow
 ```
 
 It crops each new source to its alpha bounds, resamples it to a 900px wide
-`assets/pet/<id>.webp`, regenerates `src/js/sprites.js` (the list of forms
+`assets/pet/<id>.webp` plus a 288px `assets/pet/thumb/<id>.webp` (the
+Enciclopédia uses the small one, lazy-loaded), regenerates `src/js/sprites.js` (the list of forms
 that have a sprite, read by `forms.js`) and prints what is still missing.
 
 Action icons work the same way: `assets/source/icons/<action>.png` (action

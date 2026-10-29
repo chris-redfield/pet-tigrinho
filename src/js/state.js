@@ -1,6 +1,6 @@
-import { ACTIONS, ACTION_ORDER, EGGS, LEVEL_STEP, STATS, WEEK_STARTS_ON } from './config.js';
+import { ACTIONS, ACTION_ORDER, CHECKIN_XP, EGGS, LEVEL_STEP, STATS, WEEK_STARTS_ON } from './config.js';
 import { FORMS, BRANCHES, EVOLVE_AT } from './forms.js';
-import { TRILHA_XP, trilhaFor } from './trilhas.js';
+import { TRILHA_XP, TRILHA_COINS, trilhaFor } from './trilhas.js';
 import { MEDALS } from './medals.js';
 
 const KEY = 'pet-tigrinho:save';
@@ -36,6 +36,7 @@ function blank() {
     seen: [],             // form ids the player has had: the encyclopedia
     retired: [],          // past pets, after a new egg: [{ egg, form, name, xp, at }]
     onboarded: false,     // the first-run tour was finished or skipped
+    coins: 0,             // from trilhas only; kept across eggs
   };
 }
 
@@ -60,6 +61,8 @@ function load() {
       history: { ...base.history, ...parsed.history },
       trilhas: { ...base.trilhas, ...parsed.trilhas },
       onboarded: parsed.onboarded ?? Boolean(parsed.pet),
+      // Saves from before the coins: pay the trilhas already finished.
+      coins: parsed.coins ?? (parsed.trilhas?.done?.length || 0) * TRILHA_COINS,
     }));
   } catch {
     // Private mode, full quota, corrupt JSON - play anyway, just unsaved.
@@ -547,6 +550,7 @@ export function trilhaToday() {
     ...def,
     tasks,
     xp: TRILHA_XP,
+    coins: TRILHA_COINS,
     ready: tasks.every((task) => task.done),
     waiting: state.trilhas.done.at(-1)?.date === today(),
   };
@@ -566,10 +570,11 @@ export function trilhaPath(ahead = 5) {
 }
 
 /**
- * Finishes today's trilha and pays the flat bonus. Same result shape as
- * `logAction`, so the home screen can react to it the same way.
+ * Finishes today's trilha and pays the flat bonus: XP and coins. Same
+ * result shape as `logAction` plus `coins`, so the home screen can react to
+ * it the same way.
  *
- * @returns {{gained:number, paidUnits:number, cappedUnits:number, ready:boolean}|null}
+ * @returns {{gained:number, coins:number, paidUnits:number, cappedUnits:number, ready:boolean}|null}
  */
 export function completeTrilha() {
   const trilha = trilhaToday();
@@ -577,13 +582,32 @@ export function completeTrilha() {
 
   state.trilhas.done.push({ day: trilha.day, date: today() });
   state.xp += TRILHA_XP;
+  state.coins += TRILHA_COINS;
   const row = dayRow();
   row.xp += TRILHA_XP;
   row.trilhas = (row.trilhas || 0) + 1;
   trimHistory();
   persist();
 
-  return { gained: TRILHA_XP, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
+  return { gained: TRILHA_XP, coins: TRILHA_COINS, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
+}
+
+/** The coins the player holds. */
+export function coins() {
+  return state.coins;
+}
+
+/**
+ * Pays the flat weekly check-in bonus (see CHECKIN_XP). The caller decides
+ * it is the week's first answer. Same result shape as `logAction`.
+ */
+export function payCheckin() {
+  if (!state.pet) return { gained: 0, paidUnits: 0, cappedUnits: 0, ready: false };
+  state.xp += CHECKIN_XP;
+  dayRow().xp += CHECKIN_XP;
+  trimHistory();
+  persist();
+  return { gained: CHECKIN_XP, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
 }
 
 export function resetSave() {

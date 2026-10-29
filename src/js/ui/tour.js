@@ -32,22 +32,22 @@ export const STEPS = [
   {
     target: '.actions',
     title: 'Suas tarefas do dia',
-    text: 'Foto, passos, leitura, estudo e refeição. Cada botão mostra quanto XP rende antes de você registrar.',
+    text: 'Foto, passos, leitura, estudo e refeição. Toque em uma para ver quanto XP ela rende antes de registrar.',
   },
   {
-    target: '.xpbar',
-    title: 'Barra de XP',
-    text: 'Ela enche com as tarefas e, quando completa, eu subo de nível. Em alguns níveis eu evoluo sozinho! Cada tarefa tem um limite por dia: descansar também faz parte.',
+    target: '.xprow',
+    title: 'Nível e XP',
+    text: 'O número no círculo é o meu nível. A barra enche com as tarefas e, quando completa, eu subo de nível. Em alguns níveis eu evoluo sozinho! Cada tarefa tem um limite por dia: descansar também faz parte.',
   },
   {
-    target: '.hdr__info',
-    title: 'Minhas informações',
-    text: 'Nome, nível, status e qual vai ser a minha próxima evolução. A Enciclopédia também fica aqui.',
+    target: '.wallet--hdr',
+    title: 'Moedas',
+    text: 'Cada trilha concluída rende moedas. Toque aqui para ver a loja: os adornos para mim chegam em breve, e as moedas não se perdem.',
   },
   {
-    target: '.hdr__crown',
-    title: 'Conquistas',
-    text: 'Tudo o que você já fez, nesta semana e desde o começo. Nada aqui se perde.',
+    target: '.hdr__profile',
+    title: 'Perfil',
+    text: 'Aqui ficam minhas informações (status, próxima evolução, Enciclopédia), suas conquistas e as configurações do jogo.',
   },
   {
     target: '.tab[data-tab="trilhas"]',
@@ -55,14 +55,19 @@ export const STEPS = [
     text: 'Uma missão curta por dia, com algo legal para aprender. Pulou um dia? Ela continua te esperando.',
   },
   {
+    target: '.tab[data-tab="progresso"]',
+    title: 'Seu progresso',
+    text: 'Uma vez por semana, me conte quantos dias ficou sem apostar. Aqui também ficam suas dívidas e seu horário difícil. Só você vê.',
+  },
+  {
+    target: '.tab[data-tab="progresso"]',
+    title: 'Ajuda',
+    text: 'Se bater a vontade de apostar ou o dia pesar, toque em Ajuda no topo do Progresso: lá tem contatos de apoio gratuitos. Ninguém precisa passar por isso sozinho.',
+  },
+  {
     target: '.tab[data-tab="financas"]',
     title: 'Finanças',
     text: 'Converse comigo sobre dinheiro: guardar, organizar, investir com segurança. Aposta não é investimento.',
-  },
-  {
-    target: '.tab[data-tab="ajuda"]',
-    title: 'Ajuda',
-    text: 'Se bater a vontade de apostar ou o dia pesar, aqui tem contatos de apoio gratuitos. Ninguém precisa passar por isso sozinho.',
   },
   {
     target: null,

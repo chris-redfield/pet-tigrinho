@@ -43,10 +43,23 @@ const TYPES = {
   '.webp': 'image/webp',
   '.jpg': 'image/jpeg',
   '.ico': 'image/x-icon',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
 };
 
-/** Never served, even if someone asks for them by name. */
-const PRIVATE = /(^|[\\/])(\.env|\.git|server\.js$|server[\\/])/;
+/**
+ * Never served, even if someone asks for them by name: secrets and the
+ * server, plus what the game does not need at runtime (source art, docs,
+ * tests, tools, local editor config).
+ */
+const PRIVATE = /(^|[\\/])(\.env|\.git|\.claude|\.mcp\.json|server\.js$|server[\\/]|docs[\\/]|test[\\/]|tools[\\/]|package(-lock)?\.json$)|^assets[\\/]source[\\/]/;
+
+/**
+ * Art, sound and the vendored library change rarely and are most of the
+ * bytes: a phone may keep them an hour, then check back. Code and pages
+ * are always checked, which costs only a 304 when they are unchanged.
+ */
+const LONG_CACHE = /^(assets|src[\\/]vendor)[\\/]/;
 
 function send(res, status, body, type = 'application/json; charset=utf-8') {
   res.writeHead(status, { 'Content-Type': type, 'Cache-Control': 'no-store' });
@@ -54,16 +67,52 @@ function send(res, status, body, type = 'application/json; charset=utf-8') {
 }
 
 async function serveStatic(req, res) {
-  const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  let path;
+  try {
+    path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  } catch {
+    return send(res, 400, 'Bad request', 'text/plain');   // malformed %-escape
+  }
   const rel = normalize(path === '/' ? '/index.html' : path).replace(/^([\\/])+/, '');
   const file = join(ROOT, rel);
   if (!file.startsWith(ROOT) || PRIVATE.test(rel)) return send(res, 404, 'Not found', 'text/plain');
+  let info;
   try {
-    if (!(await stat(file)).isFile()) throw new Error('not a file');
-    send(res, 200, await readFile(file), TYPES[extname(file).toLowerCase()] || 'application/octet-stream');
+    info = await stat(file);
+    if (!info.isFile()) throw new Error('not a file');
   } catch {
-    send(res, 404, 'Not found', 'text/plain');
+    return send(res, 404, 'Not found', 'text/plain');
   }
+
+  const headers = {
+    'Content-Type': TYPES[extname(file).toLowerCase()] || 'application/octet-stream',
+    'Cache-Control': LONG_CACHE.test(rel) ? 'public, max-age=3600' : 'no-cache',
+    'Last-Modified': info.mtime.toUTCString(),
+    'Accept-Ranges': 'bytes',
+  };
+  // Revalidation: an unchanged file costs a 304 instead of its bytes.
+  const since = Date.parse(req.headers['if-modified-since'] || '');
+  if (since && Math.floor(info.mtimeMs / 1000) * 1000 <= since) {
+    res.writeHead(304, headers);
+    return res.end();
+  }
+
+  const body = await readFile(file);
+  // Byte ranges: Safari will not play audio from a server without them.
+  const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
+  if (range && (range[1] || range[2])) {
+    const size = body.length;
+    const start = range[1] ? Number(range[1]) : Math.max(0, size - Number(range[2]));
+    const end = range[1] && range[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
+    if (start >= size || start > end) {
+      res.writeHead(416, { 'Content-Range': `bytes */${size}` });
+      return res.end();
+    }
+    res.writeHead(206, { ...headers, 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': end - start + 1 });
+    return res.end(req.method === 'HEAD' ? undefined : body.subarray(start, end + 1));
+  }
+  res.writeHead(200, { ...headers, 'Content-Length': body.length });
+  res.end(req.method === 'HEAD' ? undefined : body);
 }
 
 /** A small per-IP limit so a stuck client cannot burn the API quota. */

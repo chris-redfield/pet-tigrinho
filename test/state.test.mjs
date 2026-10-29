@@ -82,10 +82,21 @@ ok('tie goes to first listed', S.pickBranch('tigre-dagua', bars(70, 80, 0, 70)).
 ok('none met -> closest', S.pickBranch('tigre-dagua', bars(50, 60, 0, 40)).form.id, 'oceaniger');
 ok('Água at 70% happiness', S.pickBranch('tigre-dagua', bars(0, 70, 0, 0)).form.id, 'oceaniger');
 ok('Neviger at 60/60', S.pickBranch('tigre-dagua', bars(60, 0, 0, 60)).form.id, 'neviger');
-ok('cosmic line is direct', S.pickBranch('tigrin', bars(0, 0, 0, 0)).form.id, 'estreliger');
+ok('Tigrin: explorer -> Estreliger', S.pickBranch('tigrin', bars(20, 60, 0, 55)).form.id, 'estreliger');
+ok('Tigrin: scholar -> Tigran', S.pickBranch('tigrin', bars(80, 10, 0, 10)).form.id, 'tigran');
+ok('Tigrin: both met, cleared by more', S.pickBranch('tigrin', bars(75, 90, 0, 90)).form.id, 'estreliger');
+ok('Tigrin: nothing logged -> closest', S.pickBranch('tigrin', bars(0, 0, 0, 0)).form.id, 'estreliger');
+ok('Tigran -> Tigre Sábio', S.pickBranch('tigran', bars(0, 0, 0, 0)).form.id, 'tigre-sabio');
 ok('Estreliger -> Tigre Cósmico', S.pickBranch('estreliger', bars(0, 0, 0, 0)).form.id, 'tigre-cosmico');
-ok('fire line is direct', S.pickBranch('brasinha', bars(0, 0, 96, 0)).form.id, 'tigre-fornalha');
-ok('grass line is direct', S.pickBranch('floriger', bars(86, 0, 81, 96)).form.id, 'tigre-yggdrasil');
+ok('Brasinha: forge -> Fornalha', S.pickBranch('brasinha', bars(60, 0, 70, 10)).form.id, 'tigre-fornalha');
+ok('Brasinha: walker -> Vulcaniger', S.pickBranch('brasinha', bars(10, 0, 20, 80)).form.id, 'vulcaniger');
+ok('Brasinha: nothing logged -> Fornalha', S.pickBranch('brasinha', bars(0, 0, 0, 0)).form.id, 'tigre-fornalha');
+ok('Vulcaniger -> Magmatígreo', S.pickBranch('vulcaniger', bars(0, 0, 0, 0)).form.id, 'magmatigreo');
+ok('Floriger -> Yggdrasil', S.pickBranch('floriger', bars(86, 0, 81, 96)).form.id, 'tigre-yggdrasil');
+ok('Folhiger: photos -> Floriger', S.pickBranch('folhiger', bars(0, 75, 20, 0)).form.id, 'floriger');
+ok('Folhiger: meals -> Tigrelis', S.pickBranch('folhiger', bars(0, 20, 80, 0)).form.id, 'tigrelis');
+ok('Folhiger: nothing logged -> Floriger', S.pickBranch('folhiger', bars(0, 0, 0, 0)).form.id, 'floriger');
+ok('Tigrelis -> Parasitigre', S.pickBranch('tigrelis', bars(0, 0, 0, 0)).form.id, 'parasitigre');
 ok('final forms have no branch', S.pickBranch('tigre-glacial', bars(0, 0, 0, 0)), null);
 
 // --- evolving end to end: azul egg, focused on wisdom + health ---
@@ -195,7 +206,10 @@ ok('partial task shows progress', S.trilhaToday().tasks[0], { type: 'photo', uni
 ok('still waiting on the other task', S.trilhaToday().ready, false);
 S.logAction('meal', 1);
 ok('all tasks done', S.trilhaToday().ready, true);
-ok('finishing pays the flat bonus', S.completeTrilha().gained, 100);
+ok('no coins before a trilha', S.coins(), 0);
+const finished = S.completeTrilha();
+ok('finishing pays the flat bonus', [finished.gained, finished.coins], [100, 3]);
+ok('coins in the wallet', S.coins(), 3);
 ok('bonus is on the record', S.activity('week').xp, 180);  // 40 + 40 + 100
 ok('the next day waits for tomorrow', [S.trilhaToday().day, S.trilhaToday().waiting], [2, true]);
 ok('cannot finish twice in a day', S.completeTrilha(), null);
@@ -210,6 +224,13 @@ const v2 = await import('../src/js/state.js?v2');
 ok('v2 keeps lifetime units', v2.activity('all').units.photo, 7);
 ok('v2 has no week history yet', v2.activity('week').xp, 0);
 ok('v2 starts on trilha day 1', v2.trilhaToday().day, 1);
+ok('v2 starts with no coins', v2.coins(), 0);
+
+// --- saves from before the coins get paid for the trilhas already done ---
+store.set('pet-tigrinho:save', JSON.stringify({ version: 3, pet: { egg: 'branco' }, form: 'tigrin',
+  xp: 300, phase: {}, totals: {}, daily: { date: 'x' }, log: [],
+  trilhas: { done: [{ day: 1, date: '2026-01-01' }, { day: 2, date: '2026-01-02' }] } }));
+ok('back pay for old trilhas', (await import('../src/js/state.js?coins')).coins(), 6);
 
 // --- photos pay by place ---
 S.resetSave();
@@ -236,6 +257,14 @@ ok('old save with a pet skips the tour', (await import('../src/js/state.js?tour1
 store.set('pet-tigrinho:save', JSON.stringify({ version: 3, pet: null, form: null,
   xp: 0, phase: {}, totals: {}, daily: { date: 'x' }, log: [] }));
 ok('old save without a pet gets it', (await import('../src/js/state.js?tour2')).isOnboarded(), false);
+
+// --- weekly check-in: flat XP, the same whatever the answer ---
+store.clear();
+const C = await import('../src/js/state.js?checkin');
+ok('no pet, no check-in xp', C.payCheckin().gained, 0);
+C.chooseEgg('branco');
+ok('check-in pays flat 20', C.payCheckin().gained, 20);
+ok('check-in counts in xp', C.getState().xp, 20);
 
 console.log(failed ? `\n${failed} failing` : '\nall green');
 process.exit(failed ? 1 : 0);

@@ -18,6 +18,13 @@
 export const TRILHA_XP = 100;
 
 /**
+ * Coins for finishing a day's trilha: the only thing that pays them, so the
+ * trilha has a reward of its own. Fixed and printed on the card, like the
+ * XP; spent in the shop on adornos, never bought, never rolled.
+ */
+export const TRILHA_COINS = 3;
+
+/**
  * The days, in order. `tasks` are action ids and the units the day asks
  * for; `note` is the small thing shown on the day's card.
  *

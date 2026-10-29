@@ -1,8 +1,10 @@
 import { ACTIONS, ICONS } from '../config.js';
-import { TRILHA_XP } from '../trilhas.js';
-import { trilhaPath, trilhaToday, completeTrilha } from '../state.js';
+import { TRILHA_XP, TRILHA_COINS } from '../trilhas.js';
+import { trilhaPath, trilhaToday, completeTrilha, coins } from '../state.js';
+import { done as chime } from '../sfx.js';
 import { h, num, plural } from './dom.js';
-import { iconArt, actionIcon } from './art.js';
+import { iconArt, actionIcon, coinArt } from './art.js';
+import { openShop } from './shop.js';
 import { openSheet } from './sheet.js';
 import { toast } from './toast.js';
 
@@ -12,7 +14,8 @@ import { toast } from './toast.js';
  * One trilha per day, each a handful of the actions the home screen already
  * logs plus one small thing worth knowing. The tasks tick themselves off
  * from what the player logs, here or on the home screen, and finishing the
- * day pays the flat bonus printed on the card.
+ * day pays the flat bonus printed on the card: XP and coins, the coins
+ * being the trilha's own reward (spent in the shop, see shop.js).
  *
  * What the shape borrows from Duolingo is the zigzag of days and the one
  * highlighted node you are on. What it does not borrow is the streak: a
@@ -30,6 +33,8 @@ export function openTrilhas(host, { onChange, onClose } = {}) {
   };
 
   let centred = false;
+  // The coins the trilhas have paid, top right; a tap opens the shop.
+  const wallet = h('button', { class: 'wallet', type: 'button', onclick: () => openShop(screen) });
   const banner = h('div', { class: 'tbanner panel' });
   const path = h('ol', { class: 'tpath' });
   const body = h('div', { class: 'trilhas__body', dataset: { scroll: '' } }, path);
@@ -51,9 +56,11 @@ export function openTrilhas(host, { onChange, onClose } = {}) {
     banner.replaceChildren(
       h('div', { class: 'tbanner__kicker', text: today.waiting ? 'Trilha de hoje' : `Dia ${today.day}` }),
       h('div', { class: 'tbanner__title display', text: today.waiting ? 'Concluída!' : today.title }),
-      h('div', { class: 'tbanner__sub', text: today.waiting
+      h('div', { class: 'tbanner__sub' }, today.waiting
         ? 'A próxima trilha abre amanhã. Nada se perde até lá.'
-        : `${today.tasks.length} tarefas · +${today.xp} XP ao concluir` }));
+        : [`${today.tasks.length} tarefas · +${today.xp} XP e `, coinArt('coin coin--inline'), ` ${today.coins} ao concluir`]));
+    wallet.replaceChildren(coinArt('coin'), h('span', { text: num(coins()) }));
+    wallet.setAttribute('aria-label', `${coins()} moedas. Abrir a loja`);
 
     path.replaceChildren(...nodes.map((node) => {
       const look = STATUS[node.status];
@@ -140,7 +147,7 @@ export function openTrilhas(host, { onChange, onClose } = {}) {
         confirm.hidden = true;
         state.hidden = false;
         state.textContent = node.status === 'done'
-          ? `Concluída · +${TRILHA_XP} XP`
+          ? `Concluída · +${TRILHA_XP} XP · +${TRILHA_COINS} moedas`
           : 'Esta trilha abre amanhã.';
         return;
       }
@@ -148,12 +155,14 @@ export function openTrilhas(host, { onChange, onClose } = {}) {
       confirm.hidden = false;
       confirm.disabled = !data.ready;
       const left = rows.filter((task) => !task.done).length;
-      confirm.textContent = data.ready
-        ? `Concluir o dia · +${data.xp} XP`
-        : left === 1 ? 'Falta 1 tarefa' : `Faltam ${left} tarefas`;
+      confirm.replaceChildren(...(data.ready
+        ? [`Concluir o dia · +${data.xp} XP · `, coinArt('coin coin--inline'), ` ${data.coins}`]
+        : [left === 1 ? 'Falta 1 tarefa' : `Faltam ${left} tarefas`]));
+      confirm.setAttribute('aria-label', data.ready ? `Concluir o dia: +${data.xp} XP e ${data.coins} moedas` : confirm.textContent);
     }
 
     function onLogged(result) {
+      chime();   // every activity logged chimes once, as it is saved
       fill();
       refresh();
       onChange?.();
@@ -165,10 +174,11 @@ export function openTrilhas(host, { onChange, onClose } = {}) {
     function finish() {
       const result = completeTrilha();
       if (!result) return;
+      chime();
       dismiss();
       refresh();
       onChange?.();
-      toast(screen, `Dia ${node.day} concluído · +${result.gained} XP`);
+      toast(screen, `Dia ${node.day} concluído · +${result.gained} XP · +${result.coins} moedas`);
     }
 
     const card = h('div', { class: 'tday sheet panel', role: 'dialog', 'aria-modal': 'true',
@@ -194,7 +204,8 @@ export function openTrilhas(host, { onChange, onClose } = {}) {
     h('div', { class: 'info__bar' },
       h('button', { class: 'info__back', type: 'button', 'aria-label': 'Voltar', onclick: close },
         iconArt(ICONS.back, 'info__back-icon')),
-      h('div', { class: 'info__title', text: 'Trilhas' })),
+      h('div', { class: 'info__title', text: 'Trilhas' }),
+      wallet),
     banner,
     body);
 

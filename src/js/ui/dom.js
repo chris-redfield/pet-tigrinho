@@ -32,6 +32,21 @@ function append(node, children) {
   }
 }
 
+/**
+ * Runs `fn` once when the app swaps the current screen for another (a tab
+ * change), so a screen can stop its timers and sensors instead of leaving
+ * them running behind it. Returns a function that cancels it.
+ */
+export function onLeave(fn) {
+  document.addEventListener('screens:leave', fn, { once: true });
+  return () => document.removeEventListener('screens:leave', fn);
+}
+
+/** Tells the current screen it is about to be replaced (see `onLeave`). */
+export function leaveScreens() {
+  document.dispatchEvent(new Event('screens:leave'));
+}
+
 /** Thousands separators, pt-BR style: 15000 -> "15.000". */
 export function num(n) {
   return n.toLocaleString('pt-BR');

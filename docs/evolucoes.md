@@ -7,22 +7,60 @@ ficam como ideia para depois.
 
 ## No jogo
 
-14 formas em 5 linhas de 3 estágios, saindo de 4 ovos. O Ovo Azul é o único
-que ramifica: no Nv. 16 o Tigre d'Água vira Oceaniger ou Neviger, conforme os
+20 formas em 8 linhas de 3 estágios, saindo de 4 ovos. Todos os ovos ramificam
+no Nv. 16: o Tigrin vira Estreliger ou Tigran, a Brasinha vira Tigre-Fornalha ou
+Vulcaniger, o Tigre d'Água vira Oceaniger ou Neviger, e o Folhiger vira Floriger
+ou Tigrelis, conforme os
 status.
 
-Todas as 14 têm sprite (`assets/pet/<id>.webp`).
+Todas as 20 têm sprite (`assets/pet/<id>.webp`).
 
 | Ovo | Base (Comum) | Nv. 16 (Raro) | Nv. 36 (Lendário) |
 |---|---|---|---|
 | Branco | Tigrin | Estreliger | Tigre Cósmico |
+| Branco | ″ | Tigran | Tigre Sábio |
 | Vermelho | Brasinha | Tigre-Fornalha | Mechatigre |
+| Vermelho | ″ | Vulcaniger | Magmatígreo |
 | Azul | Tigre d'Água | Oceaniger | Tigre-Leviatã |
 | Azul | ″ | Neviger | Tigre-Glacial |
 | Verde | Folhiger | Floriger | Tigre-Yggdrasil |
+| Verde | ″ | Tigrelis | Parasitigre |
 
 Fonte da verdade dos dados: [`src/js/forms.js`](../src/js/forms.js). Se mudar
 algum requisito lá, atualize aqui também.
+
+### Regra do Ovo Branco (Nv. 16)
+
+| Rota | Requisito |
+|---|---|
+| Estreliger (Cósmico, explorador) | Felicidade ≥ 50% **e** Saúde ≥ 50% (fotos e passos) |
+| Tigran (Psíquico, estudioso) | Sabedoria ≥ 70% (leitura e estudo) |
+
+Mesma regra de folga do Ovo Azul, abaixo. Empate: vence Estreliger. Sem nada
+registrado na fase, Estreliger fica mais perto (falta 50 contra 70) e vence.
+Os sprites do Tigran e do Tigre Sábio foram desenhados pelo time (sem prompt).
+
+### Regra do Ovo Vermelho (Nv. 16)
+
+| Rota | Requisito |
+|---|---|
+| Tigre-Fornalha (Metálico, a forja) | Sabedoria ≥ 50% **e** Saciedade ≥ 50% (estudo e refeições) |
+| Vulcaniger (Pedra, a erupção) | Saúde ≥ 60% (passos) |
+
+Mesma regra de folga. Empate ou nada registrado: vence Tigre-Fornalha (falta
+50 contra 60). Os sprites do Vulcaniger e do Magmatígreo foram desenhados
+pelo time (sem prompt).
+
+### Regra do Ovo Verde (Nv. 16)
+
+| Rota | Requisito |
+|---|---|
+| Floriger (Fada, a flor) | Felicidade ≥ 60% (fotos) |
+| Tigrelis (Inseto, o fungo) | Saciedade ≥ 60% (refeições) |
+
+Mesma regra de folga. Empate ou nada registrado: vence Floriger (listado
+primeiro). Os sprites do Tigrelis e do Parasitigre foram desenhados pelo time
+(sem prompt).
 
 ### Regra do Ovo Azul (Nv. 16)
 

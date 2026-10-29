@@ -35,6 +35,7 @@ function blank() {
     log: [],
     seen: [],             // form ids the player has had: the encyclopedia
     retired: [],          // past pets, after a new egg: [{ egg, form, name, xp, at }]
+    onboarded: false,     // the first-run tour was finished or skipped
   };
 }
 
@@ -45,7 +46,8 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (!raw) return blank();
     const parsed = JSON.parse(raw);
-    if (parsed.version === 1) return seedSeen(migrateV1(parsed));
+    // Saves from before the tour: whoever already has a pet knows the game.
+    if (parsed.version === 1) return seedSeen({ ...migrateV1(parsed), onboarded: Boolean(parsed.pet) });
     // v2 knew no per-day history and no trilhas: the lifetime totals carry
     // over intact, "esta semana" simply starts empty on the next action.
     if (parsed.version !== 2 && parsed.version !== VERSION) return blank();
@@ -57,6 +59,7 @@ function load() {
       totals: { ...base.totals, ...parsed.totals },
       history: { ...base.history, ...parsed.history },
       trilhas: { ...base.trilhas, ...parsed.trilhas },
+      onboarded: parsed.onboarded ?? Boolean(parsed.pet),
     }));
   } catch {
     // Private mode, full quota, corrupt JSON - play anyway, just unsaved.
@@ -185,6 +188,17 @@ export function getState() {
 
 export function hasPet() {
   return Boolean(state.pet);
+}
+
+/** Whether the first-run tour has been finished or skipped. */
+export function isOnboarded() {
+  return Boolean(state.onboarded);
+}
+
+/** Marks the tour as seen, so it does not open by itself again. */
+export function finishOnboarding() {
+  state.onboarded = true;
+  persist();
 }
 
 export function chooseEgg(eggId) {

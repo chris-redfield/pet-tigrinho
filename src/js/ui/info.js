@@ -7,6 +7,7 @@ import {
 import { h, num } from './dom.js';
 import { iconArt } from './art.js';
 import { openEncyclopedia } from './encyclopedia.js';
+import { startTour } from './tour.js';
 
 /**
  * Pet info screen: name, level, rarity, status bars, the next evolution,
@@ -199,6 +200,13 @@ export function openInfo(host, onClose) {
     document.dispatchEvent(new CustomEvent('pet:new-egg'));
   }
 
+  // ---------- tour ----------
+
+  const replayTour = h('button', {
+    class: 'btn btn--ghost', type: 'button', text: 'Ver o tutorial de novo',
+    onclick: () => { close(); startTour(); },
+  });
+
   // ---------- frame ----------
 
   const screen = h('div', { class: 'info', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Informações do pet' },
@@ -215,7 +223,8 @@ export function openInfo(host, onClose) {
       evolvePanel,
       encyclopedia,
       newEgg,
-      hint));
+      hint,
+      replayTour));
 
   host.append(screen);
 }

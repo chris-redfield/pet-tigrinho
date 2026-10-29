@@ -7,9 +7,10 @@ import { openAchievements } from './achievements.js';
 import { h, num } from './dom.js';
 import { iconArt, actionIcon } from './art.js';
 import { toast } from './toast.js';
-import { hearts, say, celebrateGain } from './petfx.js';
+import { hearts, say, celebrateGain, replay } from './petfx.js';
 import { createChatter } from '../chatter.js';
 import { refreshTrilhaBadge } from './tabbar.js';
+import { tourOpen } from './tour.js';
 
 export function renderHome(host) {
   const stageName = h('div', { class: 'hdr__stage display' });
@@ -80,12 +81,19 @@ export function renderHome(host) {
     h('div', { class: 'home-body' }, petStage, actions),
     devBtn);
 
+  let shownLevel = 0;   // the level on screen, to spot a level-up after a log
   function update() {
     const state = getState();
-    const { form, next, into, span, ratio } = progress();
+    const { form } = progress();
 
+    // The header shows the level, and the bar the way to the next one (with
+    // "into / span" in small print under it): when it fills up, the pet
+    // goes up a level.
+    const { level: lv, ratio, into, span } = level();
+    shownLevel = lv;
     stageName.textContent = petName();
-    xpLabel.textContent = `${num(state.xp)} XP`;
+    xpLabel.textContent = `Nv. ${lv}`;
+    xpLabel.setAttribute('aria-label', `Nível ${lv}, ${num(state.xp)} XP no total`);
     art.src = form.art;
     aura.src = form.art;
     petStage.style.setProperty('--pet-scale', form.scale);
@@ -96,13 +104,11 @@ export function renderHome(host) {
     petStage.dataset.ready = String(ready);
     if (ready) autoEvolve();
 
-    if (devBtn) devBtn.textContent = `DEV +1 Nv (${level().level})`;
+    if (devBtn) devBtn.textContent = `DEV +1 Nv (${lv})`;
     fill.style.width = `${Math.round(ratio * 100)}%`;
-    nextLabel.textContent = ready
-      ? 'Evoluindo…'
-      : next
-        ? `${num(into)} / ${num(span)} para evoluir (Nv. ${next})`
-        : 'Evolução máxima alcançada';
+    // Small, under the bar: XP into this level out of what it takes.
+    nextLabel.textContent = ready ? 'Evoluindo…' : `${num(into)} / ${num(span)}`;
+    nextLabel.setAttribute('aria-label', ready ? 'Evoluindo' : `${num(into)} de ${num(span)} XP para o nível ${lv + 1}`);
 
     refreshTrilhaBadge();
 
@@ -124,9 +130,23 @@ export function renderHome(host) {
 
   function onLogged(result) {
     const before = fill.style.width;
+    const fromLevel = shownLevel;
     update();
-    if (result.gained > 0) celebrateGain(screen, petStage, bar, result.gained, before);
-    else if (result.cappedUnits > 0) toast(petStage, 'Registrado — sem XP hoje');
+    if (result.gained > 0) {
+      const levelUp = shownLevel > fromLevel;
+      // The header keeps the old level until the bar has filled up.
+      if (levelUp) xpLabel.textContent = `Nv. ${fromLevel}`;
+      celebrateGain(screen, petStage, bar, result.gained, {
+        before,
+        levelUp,
+        onLevelUp: () => {
+          xpLabel.textContent = `Nv. ${shownLevel}`;
+          replay(xpLabel, 'hdr__xp--up');
+        },
+      });
+    } else if (result.cappedUnits > 0) {
+      toast(petStage, 'Registrado — sem XP hoje');
+    }
   }
 
   /**
@@ -170,7 +190,7 @@ export function renderHome(host) {
     if (delay == null) return;
     setTimeout(() => {
       if (!screen.isConnected) return;
-      if (!evolving && !document.hidden && !screen.querySelector('.sheet, .evolve, .info')) {
+      if (!evolving && !document.hidden && !tourOpen() && !screen.querySelector('.sheet, .evolve, .info')) {
         say(petStage, chatter.onIdle(doneToday, remainingToday), 5200);
       }
       scheduleIdle();

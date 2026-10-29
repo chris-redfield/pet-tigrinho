@@ -222,5 +222,20 @@ ok('place is on the log', S.getState().log[1].place, 'casa');
 ok('place rates keep the daily cap', [S.logAction('photo', 1, { place: 'natureza' }).gained, S.logAction('photo', 1, { place: 'natureza' }).gained], [80, 0]);
 ok('photo xp feeds happiness', S.stats().find((s) => s.id === 'happiness').value, 300);
 
+// --- first-run tour: once for new players, never forced on old saves ---
+S.resetSave();
+ok('new player has not seen the tour', S.isOnboarded(), false);
+S.chooseEgg('verde');
+ok('hatching does not mark it', S.isOnboarded(), false);
+S.finishOnboarding();
+ok('finishing marks it', S.isOnboarded(), true);
+ok('it is saved', JSON.parse(store.get('pet-tigrinho:save')).onboarded, true);
+store.set('pet-tigrinho:save', JSON.stringify({ version: 3, pet: { egg: 'branco' }, form: 'tigrin',
+  xp: 50, phase: {}, totals: {}, daily: { date: 'x' }, log: [] }));
+ok('old save with a pet skips the tour', (await import('../src/js/state.js?tour1')).isOnboarded(), true);
+store.set('pet-tigrinho:save', JSON.stringify({ version: 3, pet: null, form: null,
+  xp: 0, phase: {}, totals: {}, daily: { date: 'x' }, log: [] }));
+ok('old save without a pet gets it', (await import('../src/js/state.js?tour2')).isOnboarded(), false);
+
 console.log(failed ? `\n${failed} failing` : '\nall green');
 process.exit(failed ? 1 : 0);

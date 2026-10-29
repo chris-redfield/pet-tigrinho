@@ -63,6 +63,14 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    hatches is in its button label for screen readers. Reduced motion: the
    eggs fade in place and the hatch is a soft bloom. Without WebGL the
    flat SVG eggs are used.
+
+   Right after the first hatch a short **tour** (`src/js/ui/tour.js`)
+   opens: Tigrin walks through the pet, the action row, the XP bar, info,
+   conquistas and the Trilhas, Finanças and Ajuda tabs, one spotlight at
+   a time (10 steps, Voltar/Próximo, arrow keys, Esc or *Pular* to skip).
+   It opens once (`onboarded` in the save; saves from before it count as
+   seen) and can be replayed from the info screen. A step whose element
+   is not on screen falls back to a centred card.
 2. **Log real-world actions** — five of them, each a flat XP rate. On the
    home screen they sit in a row under the centred pet, always in view:
    five round icon buttons without panels, each showing its XP:
@@ -96,6 +104,12 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    and a maxed one ~2.200, so the first evolution comes on day two and the
    second in about a week. (The XP rates were raised 4× on 2026-10-28 so
    the first evolution comes quickly; levels were left as they were.)
+
+   On the home screen the header shows only the level ("Nv. 5") and the
+   XP bar under it is the way to the *next level*, with "into / span"
+   (e.g. "12 / 42") in small print beneath. When a gain crosses a level,
+   the bar fills up, starts over from empty and grows to the new level's
+   share, and the level in the header pops.
 4. **Evolve** — five lines of three forms, Pokémon style, at Nv 16 and
    Nv 36. The tree (14 forms) is data in `src/js/forms.js`:
 

@@ -1,5 +1,6 @@
 import { initViewport, onViewportChange, getViewport } from './viewport.js';
-import { hasPet, resetSave } from './state.js';
+import { hasPet, isOnboarded, resetSave } from './state.js';
+import { startTour } from './ui/tour.js';
 import { renderEgg } from './ui/egg.js';
 import { renderHome } from './ui/home.js';
 import { renderFinance } from './ui/finance.js';
@@ -79,6 +80,10 @@ function route() {
   });
   host.after(tabbar);
   TABS[tab](host);
+
+  // First time on the home screen (right after the first egg hatched): the
+  // tour, once the screen has settled in.
+  if (tab === 'pet' && !isOnboarded()) setTimeout(() => startTour(), 700);
 }
 
 function boot() {

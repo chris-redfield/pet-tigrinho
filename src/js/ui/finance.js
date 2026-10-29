@@ -33,8 +33,12 @@ const AVATAR = 'assets/avatar/tigrin.webp';
 const WELCOME = 'Oi, eu sou o Tigrin! Me diga um valor, por exemplo "tenho R$ 500", e eu mostro onde ele pode render ' +
   'com segurança, com foco no Banco do Brasil. Lembrete: aposta não é investimento.';
 
+// Tigrin's replies are typed out at this pace, not dropped in all at once.
+const TYPE_CPS = 120;
+
 /** Kept across tab switches; cleared on reload. */
 const history = [];
+let welcomed = false;   // the welcome is typed once per visit, then shown whole
 
 const brl = (n) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
 
@@ -75,15 +79,19 @@ export function renderFinance(host) {
 
   let busy = false;
 
-  /** Appends a message; Tigrin's own (replies and "pensando") get the avatar beside them. */
-  function bubble(role, text) {
+  /**
+   * Appends a message; Tigrin's own (replies and "pensando") get the avatar
+   * beside them. With `typed`, a reply is written out bit by bit and the
+   * returned promise settles when it is complete.
+   */
+  function bubble(role, text, { typed = false } = {}) {
     const msg = h('div', { class: `msg msg--${role}` }, role === 'model' ? richText(text) : text);
     const node = role === 'model' || role === 'wait'
       ? h('div', { class: 'msg-row' }, h('img', { class: 'msg__avatar', src: AVATAR, alt: 'Tigrin' }), msg)
       : msg;
     log.append(node);
     log.scrollTop = log.scrollHeight;
-    return node;
+    return typed ? typeOut(msg, log) : Promise.resolve();
   }
 
   async function submit(preset) {
@@ -95,7 +103,8 @@ export function renderFinance(host) {
 
     busy = true;
     form.dataset.busy = 'true';
-    const thinking = bubble('wait', 'Tigrin está pensando…');
+    bubble('wait', 'Tigrin está pensando…');
+    const thinking = log.lastElementChild;
 
     const started = Date.now();
     let reply = null;
@@ -116,12 +125,13 @@ export function renderFinance(host) {
     if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
     history.push({ role: 'model', text: reply });
     thinking.remove();
-    bubble('model', reply);
+    await bubble('model', reply, { typed: true });
     busy = false;
     delete form.dataset.busy;
   }
 
-  bubble('model', WELCOME);
+  bubble('model', WELCOME, { typed: !welcomed });
+  welcomed = true;
   for (const m of history) bubble(m.role, m.text);
 
   host.append(screen);
@@ -148,6 +158,51 @@ function richText(text) {
     }
   }
   return out;
+}
+
+/**
+ * Types out an already built message: its text nodes are emptied and
+ * filled back in order, a few letters per frame, so bold and lists keep
+ * their shape as they appear. A paragraph or list item stays hidden until
+ * its first letter, so no empty bullet shows ahead of the text. A tap on
+ * the bubble shows the rest at once. The log is aria-busy meanwhile, so a
+ * screen reader reads the reply once, whole.
+ */
+function typeOut(msg, log) {
+  const walker = document.createTreeWalker(msg, NodeFilter.SHOW_TEXT);
+  const parts = [];
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    parts.push({ node: n, text: n.data, block: n.parentElement.closest('li, p') });
+    n.data = '';
+  }
+  const blocks = new Set(parts.map((p) => p.block).filter(Boolean));
+  for (const b of blocks) b.hidden = true;
+  const total = parts.reduce((sum, p) => sum + p.text.length, 0);
+
+  log.setAttribute('aria-busy', 'true');
+  return new Promise((resolve) => {
+    const start = performance.now();
+    let shown = 0;
+    let skip = false;
+    msg.addEventListener('click', () => { skip = true; }, { once: true });
+
+    const frame = (now) => {
+      const stick = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
+      shown = skip ? total : Math.min(total, Math.floor(((now - start) / 1000) * TYPE_CPS));
+      let left = shown;
+      for (const p of parts) {
+        const take = Math.min(p.text.length, left);
+        left -= take;
+        if (take > 0 && p.block) p.block.hidden = false;
+        if (p.node.data.length !== take) p.node.data = p.text.slice(0, take);
+      }
+      if (stick) log.scrollTop = log.scrollHeight;
+      if (shown < total) { requestAnimationFrame(frame); return; }
+      log.removeAttribute('aria-busy');
+      resolve();
+    };
+    requestAnimationFrame(frame);
+  });
 }
 
 function inline(text) {

@@ -6,7 +6,8 @@
  */
 
 const MAX_SIDE = 768;
-const TIMEOUT_MS = 45_000;
+// A server that is down fails at once; this only caps a slow AI.
+const TIMEOUT_MS = 10_000;
 
 /** Draws the image into a canvas no larger than MAX_SIDE, as base64 JPEG. */
 async function shrink(file) {

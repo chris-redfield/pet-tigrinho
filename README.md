@@ -81,16 +81,15 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    schema or it pays nothing.
    - *Refeição* is a photo of the plate: it pays only when the AI sees real
      food (not a drawing, a screen or a closed package). If the AI cannot be
-     reached, the meal cannot be logged for XP until it can.
+     reached, the meal pays the base +10 under a short compliment
+     (`ACTIONS.meal.praise`), never an error.
    - *Foto* pays by where it was taken, from a published table shown in
      the sheet before the photo: Natureza or Lugar visitado +20, Trabalho
      +15, Casa or Outro +10 (`ACTIONS.photo.places`). Drawings, screenshots
      and photos of screens count as Outro. If the AI cannot be reached, the
-     photo pays the base +10. Same photo, same answer as far as the model
+     photo pays the base +10 under a short word of praise
+     (`ACTIONS.photo.praise`), never an error. Same photo, same answer as far as the model
      allows (temperature 0); it is a rate table, not a draw.
-   - *Estudo* is logged as start and end time ("Registrar Horários de
-     Estudo"); the minutes in between pay, and the times are kept on the
-     log.
 
 3. **Level** — going from Nv L to L+1 costs `L × LEVEL_STEP` (6) XP, so
    Nv 16 is at 720 XP and Nv 36 at 3.780. A normal day lands near 150 XP
@@ -271,8 +270,10 @@ cp .env.example .env    # then paste your GEMINI_API_KEY
 node server.js
 ```
 
-Without a key the game still runs; the Finanças chat says it is not
-configured, photos pay the base rate and meals cannot be logged for XP. A
+Without a key the game still runs and never shows an AI error: the
+Finanças chat answers from fixed replies by amount
+(`src/js/finance-offline.js`), photos and meals pay the base rate. Any
+AI call gives up after 10 s. A
 plain `python3 -m http.server 8000` also serves the game, minus the AI.
 Setup, key safety and deploy options: `docs/gemini.md`.
 

@@ -61,6 +61,18 @@ export const ACTIONS = {
       casa:     { label: 'Casa',           emoji: '🏠', xp: 10 },
       outro:    { label: 'Outro',          emoji: '📷', xp: 10 },
     },
+    // Shown instead of an error when the AI cannot be reached; the photo
+    // still pays the base `xp`. Only the words vary, never the payout.
+    praise: [
+      'Bom trabalho!',
+      'Que foto bacana!',
+      'Ficou ótima!',
+      'Adorei esse momento!',
+      'Mandou bem!',
+      'Que registro legal!',
+      'Foto guardada com carinho!',
+      'Seu bichinho amou essa!',
+    ],
   },
   steps: {
     label: 'Passos', verb: 'Registrar passos',
@@ -76,11 +88,10 @@ export const ACTIONS = {
     xp: 15, step: 10, cap: 100,
   },
   course: {
-    label: 'Estudo', verb: 'Registrar Horários de Estudo',
+    label: 'Estudo', verb: 'Registrar estudo',
     rate: '30 min',
     unit: 'minuto', unitPlural: 'minutos',
     xp: 20, step: 30, cap: 180,
-    schedule: true,   // logged as a start and end time
   },
   meal: {
     label: 'Refeição', verb: 'Foto da refeição',
@@ -88,7 +99,19 @@ export const ACTIONS = {
     unit: 'refeição', unitPlural: 'refeições',
     xp: 10, step: 1, cap: 4,
     capture: true,
-    verify: 'meal',   // pays only if the AI sees food in the photo
+    // Pays only if the AI sees food in the photo. If the AI cannot be
+    // reached the meal still pays the base `xp`, under one of these.
+    verify: 'meal',
+    praise: [
+      'Que prato caprichado!',
+      'Isso parece delicioso!',
+      'Refeição de respeito!',
+      'Comer bem é se cuidar. Mandou bem!',
+      'Que cor bonita nesse prato!',
+      'Bom apetite!',
+      'Energia renovada!',
+      'Seu bichinho ficou com água na boca!',
+    ],
   },
 };
 

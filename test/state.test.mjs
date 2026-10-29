@@ -211,7 +211,7 @@ ok('v2 keeps lifetime units', v2.activity('all').units.photo, 7);
 ok('v2 has no week history yet', v2.activity('week').xp, 0);
 ok('v2 starts on trilha day 1', v2.trilhaToday().day, 1);
 
-// --- photos pay by place, studies keep their times ---
+// --- photos pay by place ---
 S.resetSave();
 S.chooseEgg('branco');
 ok('park photo pays the nature rate', S.logAction('photo', 1, { place: 'natureza' }).gained, 20);
@@ -221,9 +221,6 @@ ok('unknown place pays the base rate', S.logAction('photo', 1, { place: 'cassino
 ok('place is on the log', S.getState().log[1].place, 'casa');
 ok('place rates keep the daily cap', [S.logAction('photo', 1, { place: 'natureza' }).gained, S.logAction('photo', 1, { place: 'natureza' }).gained], [20, 0]);
 ok('photo xp feeds happiness', S.stats().find((s) => s.id === 'happiness').value, 75);
-const study = S.logAction('course', 45, { from: '19:00', to: '19:45' });
-ok('45 min of study = 30xp', study.gained, 30);
-ok('study times on the log', [S.getState().log[0].from, S.getState().log[0].to], ['19:00', '19:45']);
 
 console.log(failed ? `\n${failed} failing` : '\nall green');
 process.exit(failed ? 1 : 0);

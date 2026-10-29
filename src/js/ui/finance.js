@@ -1,6 +1,7 @@
 import { ICONS } from '../config.js';
 import { h } from './dom.js';
 import { iconArt } from './art.js';
+import { offlineReply } from '../finance-offline.js';
 
 /**
  * Finance tab: a chat with the Gemini agent (server.js -> /api/finance).
@@ -10,11 +11,21 @@ import { iconArt } from './art.js';
  * online casinos are not an investment. That last part does not rely on
  * the model alone: the warning card below is fixed on screen.
  *
+ * If the AI cannot answer (no server, an error, or more than TIMEOUT_MS),
+ * Tigrin answers from the fixed replies in finance-offline.js instead.
+ * The chat never shows an error.
+ *
  * The conversation lives in memory only. Money amounts are personal, so
  * nothing here is written to localStorage and a reload clears it.
  */
 
 const QUICK = [100, 500, 1000, 5000];
+
+// A server that is down fails at once; this only caps a slow AI.
+const TIMEOUT_MS = 10_000;
+
+// Tigrin "thinks" at least this long, so a fixed reply does not pop in instantly.
+const MIN_THINK_MS = 2_000;
 
 /** The agent speaks as Tigrin, the base pet, so the chat reads as talking to it. */
 const AVATAR = 'assets/avatar/tigrin.webp';
@@ -60,7 +71,7 @@ export function renderFinance(host) {
     chips,
     form,
     h('p', { class: 'finance__legal',
-      text: 'Sugestões educativas geradas por IA, não são recomendação de investimento. Confira taxas no app do BB.' }));
+      text: 'Sugestões educativas, não são recomendação de investimento. Confira taxas no app do BB.' }));
 
   let busy = false;
 
@@ -86,29 +97,28 @@ export function renderFinance(host) {
     form.dataset.busy = 'true';
     const thinking = bubble('wait', 'Tigrin está pensando…');
 
+    const started = Date.now();
+    let reply = null;
     try {
       const res = await fetch('api/finance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: history }),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
       });
       const data = await res.json().catch(() => ({}));
-      thinking.remove();
-      if (!res.ok || !data.reply) {
-        history.pop();          // let the player resend the same question
-        bubble('error', data.error || 'Não consegui falar com a IA. O servidor está rodando? (node server.js)');
-      } else {
-        history.push({ role: 'model', text: data.reply });
-        bubble('model', data.reply);
-      }
+      if (res.ok && typeof data.reply === 'string' && data.reply.trim()) reply = data.reply;
     } catch {
-      thinking.remove();
-      history.pop();
-      bubble('error', 'Sem conexão com o servidor. Rode "node server.js" e abra http://localhost:8000.');
-    } finally {
-      busy = false;
-      delete form.dataset.busy;
+      // no server, offline or too slow: the fixed reply below takes over
     }
+    reply ??= offlineReply(text);
+    const wait = MIN_THINK_MS - (Date.now() - started);
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    history.push({ role: 'model', text: reply });
+    thinking.remove();
+    bubble('model', reply);
+    busy = false;
+    delete form.dataset.busy;
   }
 
   bubble('model', WELCOME);

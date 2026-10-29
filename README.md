@@ -410,6 +410,15 @@ What `server.js` serves and how:
   so an unchanged one costs a 304, not its bytes.
 - **Audio:** `.mp3`/`.wav` get their real types and byte ranges, which
   Safari needs to play them.
+- **Cheap phones (low RAM):** camera photos are decoded straight to at
+  most 1440px (`shrinkPhoto` in `src/js/vision.js`) — a 12 MP shot would
+  take ~48 MB decoded, the copy ~6 MB — and the sheet and the AI only see
+  that copy. Small pet pictures use `srcset` with the 360px thumbnails, so
+  the browser takes the full 900px art only on screens dense enough to
+  need it. The 3D egg scene frees its GPU memory as soon as the egg hatches
+  (`forceContextLoss`), and the drifting floor layer only extends past the
+  stage on the two sides it slides in from. The idle home screen animates
+  on the GPU only (no per-frame style or layout work).
 - **`sw.js`** (a service worker) is registered on HTTPS/localhost only so
   reminders can show on Android. It caches nothing on purpose.
 
@@ -430,7 +439,7 @@ python3 tools/sprites.py              # needs Pillow
 ```
 
 It crops each new source to its alpha bounds, resamples it to a 900px wide
-`assets/pet/<id>.webp` plus a 288px `assets/pet/thumb/<id>.webp` (the
+`assets/pet/<id>.webp` plus a 360px `assets/pet/thumb/<id>.webp` (the
 Enciclopédia uses the small one, lazy-loaded), regenerates `src/js/sprites.js` (the list of forms
 that have a sprite, read by `forms.js`) and prints what is still missing.
 

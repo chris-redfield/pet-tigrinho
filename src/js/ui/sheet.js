@@ -1,6 +1,6 @@
 import { ACTIONS } from '../config.js';
 import { logAction, remainingToday } from '../state.js';
-import { checkPhoto } from '../vision.js';
+import { checkPhoto, shrinkPhoto } from '../vision.js';
 import { h, num, plural, onLeave } from './dom.js';
 import { motionAvailable, startPedometer } from '../pedometer.js';
 
@@ -169,10 +169,15 @@ export function openSheet(host, type, onLogged) {
     counterNote.hidden = false;
   }
 
-  function onPick(event) {
-    const picked = event.target.files?.[0];
+  async function onPick(event) {
+    const original = event.target.files?.[0];
     event.target.value = '';   // the same file can be picked again
-    if (!picked) return;
+    if (!original) return;
+    // Work from a screen-sized copy: the camera's own file can take ~48 MB
+    // of memory once decoded, the copy a few. If it cannot be made, use
+    // the original as before.
+    const picked = await shrinkPhoto(original).catch(() => original);
+    if (closed) return;
     if (photo) URL.revokeObjectURL(photo.url);
     photo = { file: picked, url: URL.createObjectURL(picked) };
     preview.src = photo.url;

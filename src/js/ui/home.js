@@ -35,7 +35,7 @@ export function renderHome(host) {
   const bar = h('div', { class: 'xpbar' }, fill);
   const nextLabel = h('div', { class: 'xpbar__next' });
 
-  const art = h('img', { class: 'pet-art', alt: 'Seu tigrinho' });
+  const art = h('img', { class: 'pet-art', alt: 'Seu tigrinho', decoding: 'async', fetchpriority: 'high' });
   // Ready to evolve: a glow in the line's colour hugs the pet (a blurred
   // white copy of the sprite) and small stars rise around it.
   const aura = h('img', { class: 'pet-aura', alt: '' });

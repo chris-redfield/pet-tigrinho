@@ -9,16 +9,41 @@ const MAX_SIDE = 768;
 // A server that is down fails at once; this only caps a slow AI.
 const TIMEOUT_MS = 10_000;
 
-/** Draws the image into a canvas no larger than MAX_SIDE, as base64 JPEG. */
-async function shrink(file) {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+/**
+ * Decodes an image straight to a small size. A 12 MP phone photo is about
+ * 48 MB once decoded; asking the decoder for `maxSide` pixels across keeps
+ * a cheap phone from ever holding that. Where the browser ignores the
+ * resize hint it decodes full size once, and the canvas scales it down.
+ */
+async function scaledCanvas(file, maxSide) {
+  let bitmap;
+  try {
+    bitmap = await createImageBitmap(file, { resizeWidth: maxSide, resizeQuality: 'high' });
+  } catch {
+    bitmap = await createImageBitmap(file);
+  }
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
   const canvas = document.createElement('canvas');
   canvas.width = Math.round(bitmap.width * scale);
   canvas.height = Math.round(bitmap.height * scale);
   canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close?.();
-  const url = canvas.toDataURL('image/jpeg', 0.8);
+  return canvas;
+}
+
+/**
+ * A photo resized for the screen: at most `maxSide` pixels on its long
+ * side, as a JPEG. The sheet shows this, never the camera's full file.
+ */
+export async function shrinkPhoto(file, maxSide = 1440) {
+  const canvas = await scaledCanvas(file, maxSide);
+  return new Promise((resolve, reject) => canvas.toBlob(
+    (blob) => (blob ? resolve(blob) : reject(new Error('encode failed'))), 'image/jpeg', 0.9));
+}
+
+/** The image no larger than MAX_SIDE, as base64 JPEG, for the AI. */
+async function shrink(file) {
+  const url = (await scaledCanvas(file, MAX_SIDE)).toDataURL('image/jpeg', 0.8);
   return url.slice(url.indexOf(',') + 1);
 }
 

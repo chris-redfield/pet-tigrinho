@@ -8,6 +8,7 @@
  * push from a server, which the prototype does not have. They are shown
  * through the service worker (sw.js) when there is one - the only way on
  * Android - and with `new Notification` otherwise.
+ * The Acessibilidade options are applied to <html> as classes (a11y.js).
  */
 
 const KEY = 'pet-tigrinho:settings';
@@ -20,6 +21,11 @@ const DEFAULTS = {
   reminders: false,      // daily nudges (tasks, risk hours), needs notifications
   language: 'pt',        // 'pt' only for now; 'en' is planned
   haptics: true,
+  // Acessibilidade
+  reduceMotion: null,    // null = not touched yet: starts from the phone's own setting
+  contrast: false,       // high contrast: brighter edges and dim text
+  colorblind: false,     // green -> blue, so good/bad never hinges on red vs green
+  mobility: false,       // uses a wheelchair: Passos becomes Cadeira de rodas, in minutes
 };
 
 let data = load();

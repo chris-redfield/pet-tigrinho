@@ -221,10 +221,8 @@
   0%, 100% { transform: translateY(0); }
   50%      { transform: translateY(calc(var(--u) * -1.2)); }
 }
-@media (prefers-reduced-motion: reduce) {
-  :root:not(.motion-full) .pet-art, :root:not(.motion-full) .pet-aura {
-    animation: float-soft 6s ease-in-out infinite !important;
-  }
+:root.reduce-motion .pet-art, :root.reduce-motion .pet-aura {
+  animation: float-soft 6s ease-in-out infinite !important;
 }
 @keyframes pulse {
   0%, 100% { transform: scale(1);    opacity: .85; }
@@ -341,9 +339,7 @@
   100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
 }
 @keyframes hatch-fade { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) {
-  :root:not(.motion-full) .hatch-pet { animation: hatch-fade .6s .2s ease-out both !important; }
-}
+:root.reduce-motion .hatch-pet { animation: hatch-fade .6s .2s ease-out both !important; }
 
 /* Visually hidden, still read and focusable. */
 .sr-only {
@@ -1839,9 +1835,7 @@ button.tday__row:active { background: var(--red-800); }
   100% { scale: 1; }
 }
 @keyframes level-glow { 40% { color: #fff; text-shadow: 0 0 calc(var(--u) * 2) var(--gold-300); } }
-@media (prefers-reduced-motion: reduce) {
-  :root:not(.motion-full) .lvl--up { animation: level-glow .8s ease-out !important; }
-}
+:root.reduce-motion .lvl--up { animation: level-glow .8s ease-out !important; }
 
 /* With "reduce motion" on, base.css stops every animation, which would
    make hearts, bubbles and the XP figure vanish the instant they appear.
@@ -1865,19 +1859,17 @@ button.tday__row:active { background: var(--red-800); }
   30% { box-shadow: 0 0 calc(var(--u) * 5) calc(var(--u) * 1.2) #f5c242cc; }
 }
 @keyframes bloom-soft { 0% { opacity: 0; } 30% { opacity: .9; } 100% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) {
-  :root:not(.motion-full) .pet-stage--pet .pet-art { animation: float-soft 6s ease-in-out infinite, pet-pat-soft .6s ease-out, pet-glow 1s ease-out !important; }
-  :root:not(.motion-full) .heart { animation: heart-soft 1.8s ease-out both !important; }
-  :root:not(.motion-full) .bubble { animation: fade-in .3s ease-out both !important; }
-  :root:not(.motion-full) .bubble--out { animation: soft-out .3s ease-out both !important; }
-  :root:not(.motion-full) .xp-float { animation: xp-soft 2s ease-out both !important; }
-  :root:not(.motion-full) .xpbar--gain { animation: bar-glow 1s ease-out !important; }
-  :root:not(.motion-full) .xpbar--gain::before { animation: bar-shine .9s ease-out !important; }
-  :root:not(.motion-full) .evolve[data-phase="reveal"] .evolve__bloom { animation: bloom-soft 1s ease-out both !important; }
-  :root:not(.motion-full) .evolve[data-phase="reveal"] .evolve__art--new { animation: fade-in .7s .15s ease-out both !important; }
-  :root:not(.motion-full) .evolve[data-phase="reveal"] .evolve__name { animation: fade-in .5s .5s ease-out both !important; }
-  :root:not(.motion-full) .evolve[data-phase="reveal"] .btn { animation: fade-in .5s .9s ease-out both !important; }
-}
+:root.reduce-motion .pet-stage--pet .pet-art { animation: float-soft 6s ease-in-out infinite, pet-pat-soft .6s ease-out, pet-glow 1s ease-out !important; }
+:root.reduce-motion .heart { animation: heart-soft 1.8s ease-out both !important; }
+:root.reduce-motion .bubble { animation: fade-in .3s ease-out both !important; }
+:root.reduce-motion .bubble--out { animation: soft-out .3s ease-out both !important; }
+:root.reduce-motion .xp-float { animation: xp-soft 2s ease-out both !important; }
+:root.reduce-motion .xpbar--gain { animation: bar-glow 1s ease-out !important; }
+:root.reduce-motion .xpbar--gain::before { animation: bar-shine .9s ease-out !important; }
+:root.reduce-motion .evolve[data-phase="reveal"] .evolve__bloom { animation: bloom-soft 1s ease-out both !important; }
+:root.reduce-motion .evolve[data-phase="reveal"] .evolve__art--new { animation: fade-in .7s .15s ease-out both !important; }
+:root.reduce-motion .evolve[data-phase="reveal"] .evolve__name { animation: fade-in .5s .5s ease-out both !important; }
+:root.reduce-motion .evolve[data-phase="reveal"] .btn { animation: fade-in .5s .9s ease-out both !important; }
 
 /* ---------- progresso tab (recovery indicators) ---------- */
 
@@ -2233,6 +2225,21 @@ button.wallet:active { transform: translateY(calc(var(--press) * .7)); box-shado
 .switch[aria-checked="true"] { background: var(--jade-500); border-color: var(--jade-300); }
 .switch[aria-checked="true"] .switch__knob { left: calc(100% - var(--u) * 6); background: #fff; }
 .switch:disabled { cursor: default; }
+
+/* settings: Geral | Acessibilidade */
+.settings__tabs { margin: 0 calc(var(--u) * 5) calc(var(--u) * 3); }
+.settings__tabs .seg__btn { font-size: calc(var(--u) * 2.9); }
+
+/* High contrast: panel and control edges in full gold, the soft separators
+   lit up, and the faint marks (waiting nodes, empty bars) readable. */
+:root.high-contrast .panel,
+:root.high-contrast .chip,
+:root.high-contrast .seg,
+:root.high-contrast .prog__card { border-color: var(--gold-500); }
+:root.high-contrast .seg__btn:not([aria-selected="true"]) { color: var(--c-ink); }
+:root.high-contrast .tnode[data-status="waiting"] .tnode__icon { fill: #d9b79c; }
+:root.high-contrast .set__row[data-disabled="true"] { opacity: .7; }
+:root.high-contrast :focus-visible { outline-color: #fff; }
 
 /* Last in the file on purpose: these floors must win over the per-screen
    sizes above. */

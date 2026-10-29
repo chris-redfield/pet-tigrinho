@@ -3,7 +3,7 @@ import { getState, progress, remainingToday, doneToday, petName, level, canEvolv
 import { openSheet } from './sheet.js';
 import { showEvolution } from './evolve.js';
 import { openProfile } from './profile.js';
-import { h, num, onLeave } from './dom.js';
+import { h, num, onLeave, actionCfg } from './dom.js';
 import { iconArt, actionIcon, coinArt } from './art.js';
 import { openShop } from './shop.js';
 import { toast } from './toast.js';
@@ -66,11 +66,12 @@ export function renderHome(host) {
   const actions = h('nav', { class: 'actions', 'aria-label': 'Registrar atividade' },
     ACTION_ORDER.map((type) => {
       const rate = h('div', { class: 'act__rate' });
+      const disc = h('span', { class: 'act__disc', dataset: { icon: actionCfg(type).icon } }, actionIcon(type, 'act__icon'));
       const button = h('button', {
         class: 'act', type: 'button',
         onclick: () => openSheet(screen, type, onLogged),
-      }, h('span', { class: 'act__disc' }, actionIcon(type, 'act__icon')), rate);
-      buttons.set(type, { button, rate });
+      }, disc, rate);
+      buttons.set(type, { button, rate, disc });
       return button;
     }));
 
@@ -124,8 +125,13 @@ export function renderHome(host) {
 
     refreshTrilhaBadge();
 
-    for (const [type, { button, rate }] of buttons) {
-      const cfg = ACTIONS[type];
+    for (const [type, { button, rate, disc }] of buttons) {
+      const cfg = actionCfg(type);
+      // Passos <-> Cadeira de rodas follows the setting.
+      if (disc.dataset.icon !== cfg.icon) {
+        disc.dataset.icon = cfg.icon;
+        disc.replaceChildren(actionIcon(type, 'act__icon'));
+      }
       const left = remainingToday(type);
       // A photo pays by place, so its button shows the range.
       const xps = cfg.places ? Object.values(cfg.places).map((p) => p.xp) : [cfg.xp];
@@ -217,7 +223,7 @@ export function renderHome(host) {
   // Inside the hours the player said betting used to happen (Progresso >
   // Rotina de volta), Tigrin calls them to the plan, once a day.
   const routine = getRoutine();
-  const riskLine = () => `Esse é o seu horário difícil. Bora ${ACTIONS[routine.plan]?.verb.toLowerCase() ?? 'fazer uma tarefa'} comigo agora?`;
+  const riskLine = () => `Esse é o seu horário difícil. Bora ${ACTIONS[routine.plan] ? actionCfg(routine.plan).verb.toLowerCase() : 'fazer uma tarefa'} comigo agora?`;
   if (routine && inRiskWindow() && nudgedOn !== new Date().toDateString()) {
     setTimeout(() => {
       if (!screen.isConnected || evolving || tourOpen()) return;

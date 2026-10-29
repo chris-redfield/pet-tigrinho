@@ -1,3 +1,6 @@
+import { ACTIONS } from '../config.js';
+import { getSettings } from '../settings.js';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /** Minimal element builder. Everything is built as nodes, never innerHTML. */
@@ -55,4 +58,29 @@ export function num(n) {
 /** Picks the singular or plural label for a count. */
 export function plural(n, cfg) {
   return n === 1 ? cfg.unit : cfg.unitPlural;
+}
+
+/**
+ * An action as the player sees it. For a player who uses a wheelchair
+ * (Acessibilidade), Passos becomes Cadeira de rodas, counted in minutes;
+ * it is still saved in steps. `factor` turns shown units into saved ones.
+ */
+export function actionCfg(type) {
+  const cfg = ACTIONS[type];
+  if (cfg.wheelchair && getSettings().mobility) {
+    return { ...cfg, ...cfg.wheelchair, sensor: false, factor: cfg.wheelchair.perUnit, icon: 'wheelchair' };
+  }
+  return { ...cfg, factor: 1, icon: type };
+}
+
+/** A saved amount as a number in the units the player reads. */
+export function amountNum(type, units) {
+  return num(Math.round(units / actionCfg(type).factor));
+}
+
+/** "2.000 passos", "20 minutos", "3 refeições". */
+export function amount(type, units) {
+  const view = actionCfg(type);
+  const shown = Math.round(units / view.factor);
+  return `${num(shown)} ${plural(shown, view)}`;
 }

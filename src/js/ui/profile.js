@@ -8,6 +8,8 @@ import { renderInfo } from './info.js';
 import { renderAchievements } from './achievements.js';
 import { toast } from './toast.js';
 import { syncMusic } from '../music.js';
+import { applyA11y } from '../a11y.js';
+import { systemReducedMotion } from '../motion.js';
 
 /**
  * Perfil: the person button on the home screen. One screen, three tabs:
@@ -56,11 +58,45 @@ export function openProfile(host, onClose, start = 'info') {
   host.append(screen);
 }
 
-/** Perfil > Configurações. */
+/** Perfil > Configurações: two inner tabs, Geral and Acessibilidade. */
 function renderSettings(screen) {
   const body = h('div', { class: 'info__body settings', dataset: { scroll: '' } });
+  let page = 'geral';
+
+  const tabs = h('div', { class: 'seg settings__tabs', role: 'tablist', 'aria-label': 'Configurações' },
+    [['geral', 'Geral'], ['a11y', 'Acessibilidade']].map(([id, label]) => h('button', {
+      class: 'seg__btn', type: 'button', role: 'tab', text: label, dataset: { page: id },
+      onclick: () => { page = id; render(); body.scrollTop = 0; },
+    })));
 
   function render() {
+    for (const btn of tabs.children) btn.setAttribute('aria-selected', String(btn.dataset.page === page));
+    if (page === 'a11y') renderA11y();
+    else renderGeneral();
+  }
+
+  /** Acessibilidade: each switch applies at once (classes on <html>). */
+  function renderA11y() {
+    const s = getSettings();
+    const motionOn = s.reduceMotion ?? systemReducedMotion();
+    body.replaceChildren(
+      section('Visão', [
+        toggle('Alto contraste', s.contrast, (on) => { setSetting('contrast', on); applyA11y(); },
+          { hint: 'Bordas e textos mais fortes' }),
+        toggle('Modo daltonismo', s.colorblind, (on) => { setSetting('colorblind', on); applyA11y(); },
+          { hint: 'Troca o verde por azul, para não depender de vermelho e verde' }),
+      ]),
+      section('Movimento na tela', [
+        toggle('Reduzir movimento', motionOn, (on) => { setSetting('reduceMotion', on); applyA11y(); },
+          { hint: 'Bom para quem tem TDAH ou enjoo com movimento. Ovos sem queda, XP sem voar, evolução com fade simples e chat sem digitação' }),
+      ]),
+      section('Atividades', [
+        toggle('Uso cadeira de rodas', s.mobility, (on) => { setSetting('mobility', on); },
+          { hint: 'Passos vira Cadeira de rodas, contada em minutos: 10 min valem o mesmo que 1.000 passos' }),
+      ]));
+  }
+
+  function renderGeneral() {
     const s = getSettings();
     body.replaceChildren(
       section('Som', [
@@ -134,7 +170,7 @@ function renderSettings(screen) {
   }
 
   render();
-  return body;
+  return [tabs, body];
 }
 
 function section(title, children) {

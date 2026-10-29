@@ -1,6 +1,6 @@
 import { ICONS } from '../config.js';
 import { ICON_ART } from '../sprites.js';
-import { h, svg } from './dom.js';
+import { h, svg, actionCfg } from './dom.js';
 
 const EGG_PATH = 'M50 6c20 0 36 26 36 50 0 24-16 38-36 38S14 80 14 56C14 32 30 6 50 6z';
 
@@ -38,10 +38,12 @@ export function iconArt(d, className) {
 /**
  * The icon for one of the five actions: its own generated art when there is
  * some (`ICON_ART`), otherwise the built-in gold glyph. `className--art`
- * is added to the image so CSS can size the two differently.
+ * is added to the image so CSS can size the two differently. Passos shows
+ * a wheelchair for players who use one (see actionCfg).
  */
 export function actionIcon(type, className) {
-  return ICON_ART.includes(type)
-    ? h('img', { class: `${className} ${className}--art`, src: `assets/icons/${type}.webp`, alt: '' })
-    : iconArt(ICONS[type], className);
+  const icon = actionCfg(type).icon;
+  return ICON_ART.includes(icon)
+    ? h('img', { class: `${className} ${className}--art`, src: `assets/icons/${icon}.webp`, alt: '' })
+    : iconArt(ICONS[icon], className);
 }

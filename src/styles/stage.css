@@ -92,11 +92,9 @@ body[data-mode="framed"] #backdrop { opacity: 1; }
 /* With "reduce motion" on, base.css would freeze the floor. It keeps
    drifting toward the bottom-left at half speed instead: still reads as a
    slide (~6px/s on a phone), calm enough not to pull the eye. */
-@media (prefers-reduced-motion: reduce) {
-  :root:not(.motion-full) .stage::before {
-    animation-duration: 8s !important;
-    animation-iteration-count: infinite !important;
-  }
+:root.reduce-motion .stage::before {
+  animation-duration: 8s !important;
+  animation-iteration-count: infinite !important;
 }
 
 /* Only the desktop frame gets rounded corners and a lift. */

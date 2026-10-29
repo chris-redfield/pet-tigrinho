@@ -17,6 +17,7 @@ export const ICONS = {
   pencil: 'M15.6 3.6a1.6 1.6 0 012.3 0l2.5 2.5a1.6 1.6 0 010 2.3L9.2 19.6l-5.4 1.2a.5.5 0 01-.6-.6l1.2-5.4L15.6 3.6zM14.4 7.2l2.4 2.4 1.6-1.6-2.4-2.4-1.6 1.6z',
   lock: 'M12 2.8a4.8 4.8 0 014.8 4.8V10h.8c.9 0 1.6.7 1.6 1.6v8c0 .9-.7 1.6-1.6 1.6H6.4c-.9 0-1.6-.7-1.6-1.6v-8c0-.9.7-1.6 1.6-1.6h.8V7.6A4.8 4.8 0 0112 2.8zm0 2a2.8 2.8 0 00-2.8 2.8V10h5.6V7.6A2.8 2.8 0 0012 4.8zm0 8.4a1.6 1.6 0 00-.8 3v1.6h1.6v-1.6a1.6 1.6 0 00-.8-3z',
   back: 'M15.4 4.2a1 1 0 010 1.4L9 12l6.4 6.4a1 1 0 01-1.4 1.4l-7.1-7.1a1 1 0 010-1.4L14 4.2a1 1 0 011.4 0z',
+  wheelchair: 'M10 2.2a2.1 2.1 0 110 4.2 2.1 2.1 0 010-4.2zM8.4 7.6h2.6v3.8h5.1c.7 0 1.2.4 1.4 1.1l1.1 4.4 1.3-.4.6 2-3.4 1-1.3-5.3H9.7c-.7 0-1.3-.6-1.3-1.3zM7 10.6l.3 2a4.2 4.2 0 105.6 5.6l2 .4A6.2 6.2 0 117 10.6z',
   paw: 'M7 7.5a2 2 0 110 4 2 2 0 010-4zm10 0a2 2 0 110 4 2 2 0 010-4zM9.8 3.6a2 2 0 110 4 2 2 0 010-4zm4.4 0a2 2 0 110 4 2 2 0 010-4zM12 11.6c2.6 0 5.6 3.4 5.6 6 0 1.6-1.2 2.6-2.8 2.6-1.1 0-1.8-.6-2.8-.6s-1.7.6-2.8.6c-1.6 0-2.8-1-2.8-2.6 0-2.6 3-6 5.6-6z',
   coin: 'M12 2.4a9.6 9.6 0 110 19.2 9.6 9.6 0 010-19.2zm.9 4h-1.8v1.3c-1.6.3-2.7 1.4-2.7 2.8 0 1.7 1.3 2.4 3.1 2.8 1.3.3 1.8.6 1.8 1.2 0 .6-.6 1-1.5 1-1 0-1.7-.4-2-1.1l-1.6.7c.4 1.1 1.4 1.9 2.9 2.1v1.3h1.8v-1.3c1.7-.3 2.7-1.4 2.7-2.9 0-1.7-1.2-2.4-3.1-2.8-1.3-.3-1.8-.6-1.8-1.1 0-.5.5-.9 1.3-.9.8 0 1.4.3 1.7 1l1.6-.7c-.4-1-1.2-1.6-2.4-1.8V6.4z',
   person: 'M12 11.6a4.4 4.4 0 100-8.8 4.4 4.4 0 000 8.8zM12 13.6c-4.6 0-8.4 2.4-8.4 5.6v1.2c0 .5.4.8.8.8h15.2c.4 0 .8-.3.8-.8v-1.2c0-3.2-3.8-5.6-8.4-5.6z',
@@ -76,12 +77,22 @@ export const ACTIONS = {
       'Seu bichinho amou essa!',
     ],
   },
+  // A player who uses a wheelchair (Acessibilidade) sees this action as
+  // Cadeira de rodas, counted in minutes. It is still saved in steps, so
+  // the cap, trilhas and medals stay one scale: a minute counts as
+  // `perUnit` steps (10 min = 1.000 passos = the same 40 XP).
   steps: {
     label: 'Passos', verb: 'Registrar passos',
-    rate: '1.000',
+    rate: '1.000 passos',
     unit: 'passo', unitPlural: 'passos',
     xp: 40, step: 1000, cap: 15000,
     sensor: true,
+    wheelchair: {
+      label: 'Cadeira de rodas', verb: 'Registrar cadeira de rodas',
+      rate: '10 min',
+      unit: 'minuto', unitPlural: 'minutos',
+      step: 10, cap: 150, perUnit: 100,
+    },
   },
   book: {
     label: 'Leitura', verb: 'Registrar leitura',

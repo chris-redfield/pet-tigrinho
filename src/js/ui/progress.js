@@ -7,7 +7,7 @@ import {
   careSteps, markCare,
   getRoutine, setRoutine, clearRoutine, routineWeek,
 } from '../recovery.js';
-import { h } from './dom.js';
+import { h, actionCfg } from './dom.js';
 import { toast } from './toast.js';
 import { iconArt } from './art.js';
 import { openHelp } from './help.js';
@@ -189,7 +189,7 @@ export function renderProgress(host) {
     return card('Rotina de volta', [
       h('p', { class: 'prog__q' },
         'Seu horário difícil: ', h('strong', { text: `${hourLabel(routine.from)} às ${hourLabel(routine.to)}` }),
-        '. Plano: ', h('strong', { text: ACTIONS[routine.plan]?.verb ?? '—' }), '.'),
+        '. Plano: ', h('strong', { text: ACTIONS[routine.plan] ? actionCfg(routine.plan).verb : '—' }), '.'),
       h('div', { class: 'prog__meter', role: 'img', 'aria-label': `${week.done} de ${week.planned} dias` },
         h('span', { class: 'prog__meter-fill prog__meter-fill--jade', style: `width:${(week.done / week.planned) * 100}%` })),
       h('p', { class: 'prog__note', text: `Esta semana: ${week.done} de ${week.planned} ${week.planned === 1 ? 'dia' : 'dias'} com uma tarefa registrada nesse horário.` }),
@@ -217,7 +217,7 @@ export function renderProgress(host) {
         h('label', { class: 'prog__field' }, h('span', { text: 'Às' }), hours('to', current?.to ?? 22))),
       h('label', { class: 'prog__field' }, h('span', { text: 'O que fazer no lugar' }),
         h('select', { class: 'prog__input', name: 'plan' },
-          ACTION_ORDER.map((type) => h('option', { value: type, selected: type === (current?.plan ?? 'steps'), text: ACTIONS[type].verb })))),
+          ACTION_ORDER.map((type) => h('option', { value: type, selected: type === (current?.plan ?? 'steps'), text: actionCfg(type).verb })))),
       h('button', { class: 'btn prog__btn', type: 'submit', text: 'Salvar' }));
     return form;
   }

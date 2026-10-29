@@ -1,10 +1,10 @@
-import { ICONS, RARITIES, ACTIONS, STATS } from '../config.js';
+import { ICONS, RARITIES, STATS } from '../config.js';
 import { EVOLVE_AT } from '../forms.js';
 import {
   level, stats, petName, renamePet, currentForm, nextBranch, progress, canEvolve,
   discovered, canStartNewEgg, startNewEgg,
 } from '../state.js';
-import { h, num } from './dom.js';
+import { h, num, actionCfg } from './dom.js';
 import { iconArt } from './art.js';
 import { openEncyclopedia } from './encyclopedia.js';
 import { startTour } from './tour.js';
@@ -94,7 +94,7 @@ export function renderInfo(screen, close) {
     h('h3', { class: 'info__heading', text: 'Status desta fase' }),
     bars.map((stat) => {
       const pct = stat.pct;
-      const source = stat.from.map((type) => ACTIONS[type].label).join(' · ');
+      const source = stat.from.map((type) => actionCfg(type).label).join(' · ');
       return h('div', { class: 'stat' },
         h('div', { class: 'stat__top' },
           h('span', { class: 'stat__label', text: stat.label }),

@@ -6,8 +6,8 @@ import { iconArt } from './art.js';
 const TABS = [
   { id: 'pet',      label: 'Pet',      icon: ICONS.paw },
   { id: 'trilhas',  label: 'Trilhas',  icon: ICONS.trail, badge: true },
+  { id: 'progresso', label: 'Progresso', icon: ICONS.chart },
   { id: 'financas', label: 'Finanças', icon: ICONS.coin },
-  { id: 'ajuda',    label: 'Ajuda',    icon: ICONS.heart },
 ];
 
 /**

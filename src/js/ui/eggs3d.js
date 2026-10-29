@@ -1,4 +1,5 @@
 import * as THREE from '../../vendor/three.module.min.js';
+import { eggSfx } from '../sfx.js';
 
 /**
  * The egg pick in 3D: four eggs spinning on their own axis, each with a
@@ -49,7 +50,7 @@ export function createEggStage(host, eggs, { reduced, onPick }) {
       new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false }));
     scene.add(shadow, pivot);
     mesh.userData.index = i;
-    return { egg, mesh, tilt, pivot, shadow, material, slot: new THREE.Vector2(), phase: i * 0.9, spin: 0, gone: 0 };
+    return { egg, mesh, tilt, pivot, shadow, material, slot: new THREE.Vector2(), phase: i * 0.9, spin: 0, gone: 0, hits: 0 };
   });
 
   let view = { w: 1, h: 1, size: 1 };
@@ -122,8 +123,13 @@ export function createEggStage(host, eggs, { reduced, onPick }) {
         it.material.transparent = s < 1;
         it.material.opacity = s;
       } else {
-        // Falls from just above the screen onto its spot.
+        // Falls from just above the screen onto its spot. Each touchdown
+        // (the fall, then the two bounces) rings the egg's note.
         const { lift, squash } = drop(s);
+        if (it.hits < IMPACTS.length && s >= IMPACTS[it.hits][0]) {
+          eggSfx.land(i, [1, 0.45, 0.2][it.hits]);
+          it.hits += 1;
+        }
         air = lift;
         y += lift * (view.h / 2 + view.size - it.slot.y);
         sx = 1 + squash; sy = 1 - squash;
@@ -200,6 +206,7 @@ export function createEggStage(host, eggs, { reduced, onPick }) {
   function pick(i) {
     if (picked) return;
     picked = { item: items[i], at: performance.now() };
+    eggSfx.shake();
   }
 
   // ---------- the pop ----------
@@ -228,6 +235,7 @@ export function createEggStage(host, eggs, { reduced, onPick }) {
     flash.position.copy(centre);
     scene.add(flash);
     burst = { at: performance.now(), shards, flash, last: 0 };
+    eggSfx.hatch();
 
     // Where the pop is on screen, in CSS pixels, for the pet reveal.
     const p = centre.clone().project(camera);

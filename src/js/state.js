@@ -1,6 +1,6 @@
-import { ACTIONS, ACTION_ORDER, EGGS, LEVEL_STEP, STATS, WEEK_STARTS_ON } from './config.js';
+import { ACTIONS, ACTION_ORDER, CHECKIN_XP, EGGS, LEVEL_STEP, STATS, WEEK_STARTS_ON } from './config.js';
 import { FORMS, BRANCHES, EVOLVE_AT } from './forms.js';
-import { TRILHA_XP, trilhaFor } from './trilhas.js';
+import { TRILHA_XP, TRILHA_COINS, trilhaFor } from './trilhas.js';
 import { MEDALS } from './medals.js';
 
 const KEY = 'pet-tigrinho:save';
@@ -35,6 +35,8 @@ function blank() {
     log: [],
     seen: [],             // form ids the player has had: the encyclopedia
     retired: [],          // past pets, after a new egg: [{ egg, form, name, xp, at }]
+    onboarded: false,     // the first-run tour was finished or skipped
+    coins: 0,             // from trilhas only; kept across eggs
   };
 }
 
@@ -45,7 +47,8 @@ function load() {
     const raw = localStorage.getItem(KEY);
     if (!raw) return blank();
     const parsed = JSON.parse(raw);
-    if (parsed.version === 1) return seedSeen(migrateV1(parsed));
+    // Saves from before the tour: whoever already has a pet knows the game.
+    if (parsed.version === 1) return seedSeen({ ...migrateV1(parsed), onboarded: Boolean(parsed.pet) });
     // v2 knew no per-day history and no trilhas: the lifetime totals carry
     // over intact, "esta semana" simply starts empty on the next action.
     if (parsed.version !== 2 && parsed.version !== VERSION) return blank();
@@ -57,6 +60,9 @@ function load() {
       totals: { ...base.totals, ...parsed.totals },
       history: { ...base.history, ...parsed.history },
       trilhas: { ...base.trilhas, ...parsed.trilhas },
+      onboarded: parsed.onboarded ?? Boolean(parsed.pet),
+      // Saves from before the coins: pay the trilhas already finished.
+      coins: parsed.coins ?? (parsed.trilhas?.done?.length || 0) * TRILHA_COINS,
     }));
   } catch {
     // Private mode, full quota, corrupt JSON - play anyway, just unsaved.
@@ -185,6 +191,17 @@ export function getState() {
 
 export function hasPet() {
   return Boolean(state.pet);
+}
+
+/** Whether the first-run tour has been finished or skipped. */
+export function isOnboarded() {
+  return Boolean(state.onboarded);
+}
+
+/** Marks the tour as seen, so it does not open by itself again. */
+export function finishOnboarding() {
+  state.onboarded = true;
+  persist();
 }
 
 export function chooseEgg(eggId) {
@@ -533,6 +550,7 @@ export function trilhaToday() {
     ...def,
     tasks,
     xp: TRILHA_XP,
+    coins: TRILHA_COINS,
     ready: tasks.every((task) => task.done),
     waiting: state.trilhas.done.at(-1)?.date === today(),
   };
@@ -552,10 +570,11 @@ export function trilhaPath(ahead = 5) {
 }
 
 /**
- * Finishes today's trilha and pays the flat bonus. Same result shape as
- * `logAction`, so the home screen can react to it the same way.
+ * Finishes today's trilha and pays the flat bonus: XP and coins. Same
+ * result shape as `logAction` plus `coins`, so the home screen can react to
+ * it the same way.
  *
- * @returns {{gained:number, paidUnits:number, cappedUnits:number, ready:boolean}|null}
+ * @returns {{gained:number, coins:number, paidUnits:number, cappedUnits:number, ready:boolean}|null}
  */
 export function completeTrilha() {
   const trilha = trilhaToday();
@@ -563,13 +582,32 @@ export function completeTrilha() {
 
   state.trilhas.done.push({ day: trilha.day, date: today() });
   state.xp += TRILHA_XP;
+  state.coins += TRILHA_COINS;
   const row = dayRow();
   row.xp += TRILHA_XP;
   row.trilhas = (row.trilhas || 0) + 1;
   trimHistory();
   persist();
 
-  return { gained: TRILHA_XP, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
+  return { gained: TRILHA_XP, coins: TRILHA_COINS, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
+}
+
+/** The coins the player holds. */
+export function coins() {
+  return state.coins;
+}
+
+/**
+ * Pays the flat weekly check-in bonus (see CHECKIN_XP). The caller decides
+ * it is the week's first answer. Same result shape as `logAction`.
+ */
+export function payCheckin() {
+  if (!state.pet) return { gained: 0, paidUnits: 0, cappedUnits: 0, ready: false };
+  state.xp += CHECKIN_XP;
+  dayRow().xp += CHECKIN_XP;
+  trimHistory();
+  persist();
+  return { gained: CHECKIN_XP, paidUnits: 0, cappedUnits: 0, ready: canEvolve() };
 }
 
 export function resetSave() {

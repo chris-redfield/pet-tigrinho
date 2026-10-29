@@ -1,5 +1,7 @@
 import { h } from './dom.js';
 import { reducedMotion } from '../motion.js';
+import { haptic } from '../settings.js';
+import { play, pat } from '../sfx.js';
 
 /**
  * Small "juice" effects around the pet: hearts on a tap, a speech bubble,
@@ -28,7 +30,7 @@ function whenDone(node, ms, fn = () => node.remove()) {
 const ONE_SHOT = ['pet-stage--pet', 'pet-stage--hop'];
 
 /** Restarts a one-shot CSS animation class on `node`, clearing the other reactions first. */
-function replay(node, cls) {
+export function replay(node, cls) {
   node.classList.remove(...ONE_SHOT, cls);
   void node.offsetWidth;   // force a reflow so the animation starts over
   node.classList.add(cls);
@@ -59,6 +61,8 @@ export function hearts(stage, at) {
   const off = at ? Math.max(-1, Math.min(1, (x - box.width / 2) / (box.width / 4))) : 0.6;
   stage.style.setProperty('--lean', `${(off * 6).toFixed(1)}deg`);
   replay(stage, 'pet-stage--pet');
+  haptic(10);
+  pat();
 }
 
 /** A speech bubble above the pet; a new line replaces the current one. */
@@ -81,10 +85,15 @@ export function say(stage, text, ms = 3600) {
  * @param {HTMLElement} stage   the .pet-stage
  * @param {HTMLElement} bar     the .xpbar
  * @param {number} gained       XP paid by the action (already shown on the button)
- * @param {string} [before]     the fill's width before the gain; the bar
- *                              holds it until the gain lands, then grows
+ * @param {object} [opts]
+ * @param {string} [opts.before]   the fill's width before the gain; the bar
+ *                                 holds it until the gain lands, then grows
+ * @param {boolean} [opts.levelUp] the gain crossed into a new level: the bar
+ *                                 fills up, starts over from empty and grows
+ *                                 to the new level's share
+ * @param {() => void} [opts.onLevelUp]  runs as the bar starts over
  */
-export function celebrateGain(screen, stage, bar, gained, before) {
+export function celebrateGain(screen, stage, bar, gained, { before, levelUp, onLevelUp } = {}) {
   replay(stage, 'pet-stage--hop');
 
   const label = h('div', { class: 'xp-float', text: `+${gained} XP`, 'aria-hidden': 'true' });
@@ -94,11 +103,27 @@ export function celebrateGain(screen, stage, bar, gained, before) {
   const fill = bar.querySelector('.xpbar__fill') || bar;
   const after = fill.style.width;
   if (before && before !== after) fill.style.width = before;
-  const land = () => {
+
+  const grow = (width, then) => {
     bar.classList.add('xpbar--grow');
-    fill.style.width = after;
+    fill.style.width = width;
+    setTimeout(() => { bar.classList.remove('xpbar--grow'); then?.(); }, 1150);
+  };
+  const land = () => {
+    haptic(levelUp ? [20, 60, 30] : 18);
+    play('gain');
     replay(bar, 'xpbar--gain');
-    setTimeout(() => bar.classList.remove('xpbar--grow'), 1200);
+    if (!levelUp) { grow(after); return; }
+    // Full, then empty in one frame, then up to the new level's share.
+    grow('100%', () => {
+      bar.classList.add('xpbar--snap');
+      fill.style.width = '0%';
+      void fill.offsetWidth;
+      bar.classList.remove('xpbar--snap');
+      onLevelUp?.();
+      replay(bar, 'xpbar--gain');
+      grow(after);
+    });
   };
 
   if (reducedMotion()) { setTimeout(land, 450); return; }

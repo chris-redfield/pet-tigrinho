@@ -1,27 +1,36 @@
 import { ACTIONS, ACTION_ORDER, ICONS } from '../config.js';
-import { getState, progress, remainingToday, doneToday, petName, level, canEvolve, evolve, devLevelUp, currentForm } from '../state.js';
+import { getState, progress, remainingToday, doneToday, petName, level, canEvolve, evolve, devLevelUp, currentForm, coins } from '../state.js';
 import { openSheet } from './sheet.js';
 import { showEvolution } from './evolve.js';
-import { openInfo } from './info.js';
-import { openAchievements } from './achievements.js';
-import { h, num } from './dom.js';
-import { iconArt, actionIcon } from './art.js';
+import { openProfile } from './profile.js';
+import { h, num, onLeave } from './dom.js';
+import { iconArt, actionIcon, coinArt } from './art.js';
+import { openShop } from './shop.js';
 import { toast } from './toast.js';
-import { hearts, say, celebrateGain } from './petfx.js';
+import { hearts, say, celebrateGain, replay } from './petfx.js';
 import { createChatter } from '../chatter.js';
 import { refreshTrilhaBadge } from './tabbar.js';
+import { tourOpen } from './tour.js';
+import { getRoutine, inRiskWindow } from '../recovery.js';
+import { remind } from '../settings.js';
+import { done as chime } from '../sfx.js';
+
+let nudgedOn = null;    // the day Tigrin last called to the risk-hour plan
+let remindedOn = null;  // the day the "no task yet" reminder last went out
 
 export function renderHome(host) {
   const stageName = h('div', { class: 'hdr__stage display' });
-  const xpLabel = h('div', { class: 'hdr__xp' });
-  const infoBtn = h('button', {
-    class: 'hdr__info', type: 'button', 'aria-label': 'Informações do pet',
-    onclick: () => openInfo(screen, update),
-  }, iconArt(ICONS.info, 'hdr__info-icon'));
-  const crownBtn = h('button', {
-    class: 'hdr__crown', type: 'button', 'aria-label': 'Conquistas',
-    onclick: () => openAchievements(screen, update),
-  }, iconArt(ICONS.crown, 'hdr__crown-icon'));
+  // The level, as a round badge on the left end of the XP bar.
+  const xpLabel = h('div', { class: 'lvl', role: 'img' });
+  // Perfil: the pet's info, conquistas and settings, in one screen.
+  const profileBtn = h('button', {
+    class: 'hdr__profile', type: 'button', 'aria-label': 'Perfil: informações, conquistas e configurações',
+    onclick: () => openProfile(screen, update),
+  }, iconArt(ICONS.person, 'hdr__profile-icon'));
+  // Coins from the trilhas, top left; a tap opens the shop.
+  const coinCount = h('span', { class: 'wallet__n' });
+  const wallet = h('button', { class: 'wallet wallet--hdr', type: 'button', onclick: () => openShop(screen, { onEarn: () => document.dispatchEvent(new CustomEvent('app:tab', { detail: 'trilhas' })) }) },
+    coinArt('coin'), coinCount);
   const fill = h('div', { class: 'xpbar__fill' });
   const bar = h('div', { class: 'xpbar' }, fill);
   const nextLabel = h('div', { class: 'xpbar__next' });
@@ -50,8 +59,9 @@ export function renderHome(host) {
 
   // The five actions in a row under the pet, always in view: round icon
   // buttons without frames, so they sit lightly on the scene. The name
-  // lives in the aria-label; the XP stays on the face of every button,
-  // because the player must always see what an action pays before acting.
+  // lives in the aria-label. What an action pays is not printed here, to
+  // keep the scene clean: a tap opens its sheet, which shows the XP before
+  // anything is logged. Under a button only "✓ hoje" shows, once it is done.
   const buttons = new Map();
   const actions = h('nav', { class: 'actions', 'aria-label': 'Registrar atividade' },
     ACTION_ORDER.map((type) => {
@@ -72,20 +82,30 @@ export function renderHome(host) {
 
   const screen = h('div', { class: 'screen' },
     h('div', { class: 'hdr' },
+      h('div', { class: 'hdr__left' }, wallet),
+      // The pet's name, centred over its level and XP.
       h('div', { class: 'hdr__name' }, stageName),
-      crownBtn,
-      h('div', { class: 'hdr__right' }, xpLabel, infoBtn)),
-    bar,
+      h('div', { class: 'hdr__right' }, profileBtn)),
+    h('div', { class: 'xprow' }, xpLabel, bar),
     nextLabel,
     h('div', { class: 'home-body' }, petStage, actions),
     devBtn);
 
+  let shownLevel = 0;   // the level on screen, to spot a level-up after a log
   function update() {
     const state = getState();
-    const { form, next, into, span, ratio } = progress();
+    const { form } = progress();
 
+    // The badge shows the level, and the bar the way to the next one (with
+    // "into / span" in small print under it): when it fills up, the pet
+    // goes up a level.
+    const { level: lv, ratio, into, span } = level();
+    shownLevel = lv;
     stageName.textContent = petName();
-    xpLabel.textContent = `${num(state.xp)} XP`;
+    coinCount.textContent = num(coins());
+    wallet.setAttribute('aria-label', `${coins()} moedas. Abrir a loja`);
+    xpLabel.textContent = String(lv);
+    xpLabel.setAttribute('aria-label', `Nível ${lv}, ${num(state.xp)} XP no total`);
     art.src = form.art;
     aura.src = form.art;
     petStage.style.setProperty('--pet-scale', form.scale);
@@ -96,13 +116,11 @@ export function renderHome(host) {
     petStage.dataset.ready = String(ready);
     if (ready) autoEvolve();
 
-    if (devBtn) devBtn.textContent = `DEV +1 Nv (${level().level})`;
+    if (devBtn) devBtn.textContent = `DEV +1 Nv (${lv})`;
     fill.style.width = `${Math.round(ratio * 100)}%`;
-    nextLabel.textContent = ready
-      ? 'Evoluindo…'
-      : next
-        ? `${num(into)} / ${num(span)} para evoluir (Nv. ${next})`
-        : 'Evolução máxima alcançada';
+    // Small, under the bar: XP into this level out of what it takes.
+    nextLabel.textContent = ready ? 'Evoluindo…' : `${num(into)} / ${num(span)}`;
+    nextLabel.setAttribute('aria-label', ready ? 'Evoluindo' : `${num(into)} de ${num(span)} XP para o nível ${lv + 1}`);
 
     refreshTrilhaBadge();
 
@@ -115,7 +133,8 @@ export function renderHome(host) {
       const hi = Math.max(...xps);
       const pays = lo === hi ? `+${lo} XP` : `+${lo}–${hi} XP`;
       button.dataset.done = String(left === 0);
-      rate.textContent = left === 0 ? '✓ hoje' : pays;
+      rate.textContent = '✓ hoje';
+      rate.hidden = left !== 0;
       button.setAttribute('aria-label', left === 0
         ? `${cfg.label}: concluído hoje`
         : `${cfg.label}: ${pays} por ${cfg.rate}`);
@@ -124,9 +143,25 @@ export function renderHome(host) {
 
   function onLogged(result) {
     const before = fill.style.width;
+    const fromLevel = shownLevel;
     update();
-    if (result.gained > 0) celebrateGain(screen, petStage, bar, result.gained, before);
-    else if (result.cappedUnits > 0) toast(petStage, 'Registrado — sem XP hoje');
+    // Every activity logged chimes once, as it is saved.
+    chime();
+    if (result.gained > 0) {
+      const levelUp = shownLevel > fromLevel;
+      // The badge keeps the old level until the bar has filled up.
+      if (levelUp) xpLabel.textContent = String(fromLevel);
+      celebrateGain(screen, petStage, bar, result.gained, {
+        before,
+        levelUp,
+        onLevelUp: () => {
+          xpLabel.textContent = String(shownLevel);
+          replay(xpLabel, 'lvl--up');
+        },
+      });
+    } else if (result.cappedUnits > 0) {
+      toast(petStage, 'Registrado — sem XP hoje');
+    }
   }
 
   /**
@@ -165,18 +200,50 @@ export function renderHome(host) {
   // Now and then, while the home screen is open, the pet says something:
   // mostly a gentle invitation to an action not done today. Spaced minutes
   // apart and capped per visit; stops when the screen goes away.
+  let idleTimer = null;
   function scheduleIdle() {
     const delay = chatter.nextIdleDelay();
     if (delay == null) return;
-    setTimeout(() => {
+    idleTimer = setTimeout(() => {
       if (!screen.isConnected) return;
-      if (!evolving && !document.hidden && !screen.querySelector('.sheet, .evolve, .info')) {
+      if (!evolving && !document.hidden && !tourOpen() && !screen.querySelector('.sheet, .evolve, .info')) {
         say(petStage, chatter.onIdle(doneToday, remainingToday), 5200);
       }
       scheduleIdle();
     }, delay);
   }
   scheduleIdle();
+
+  // Inside the hours the player said betting used to happen (Progresso >
+  // Rotina de volta), Tigrin calls them to the plan, once a day.
+  const routine = getRoutine();
+  const riskLine = () => `Esse é o seu horário difícil. Bora ${ACTIONS[routine.plan]?.verb.toLowerCase() ?? 'fazer uma tarefa'} comigo agora?`;
+  if (routine && inRiskWindow() && nudgedOn !== new Date().toDateString()) {
+    setTimeout(() => {
+      if (!screen.isConnected || evolving || tourOpen()) return;
+      nudgedOn = new Date().toDateString();
+      say(petStage, riskLine(), 6000);
+    }, 1800);
+  }
+
+  // With the game in the background, the same calls go out as phone
+  // notifications, if the player turned reminders on (Perfil >
+  // Configurações): the risk-hour one, and after 19h a gentle one when
+  // nothing was logged today. Each at most once a day.
+  const background = setInterval(() => {
+    if (!screen.isConnected) { clearInterval(background); return; }
+    const day = new Date().toDateString();
+    if (routine && inRiskWindow() && nudgedOn !== day && remind(riskLine())) nudgedOn = day;
+    const idle = ACTION_ORDER.every((type) => doneToday(type) === 0);
+    if (idle && new Date().getHours() >= 19 && remindedOn !== day
+      && remind('Que tal registrar uma tarefa hoje? O Tigrin está por aqui.')) remindedOn = day;
+  }, 5 * 60_000);
+
+  // Leaving for another tab: stop the timers now, not on their next tick.
+  onLeave(() => {
+    clearInterval(background);
+    clearTimeout(idleTimer);
+  });
 
   update();
   host.append(screen);

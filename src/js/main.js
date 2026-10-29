@@ -1,12 +1,18 @@
 import { initViewport, onViewportChange, getViewport } from './viewport.js';
-import { hasPet, resetSave } from './state.js';
+import { hasPet, isOnboarded, resetSave } from './state.js';
+import { startTour } from './ui/tour.js';
 import { renderEgg } from './ui/egg.js';
 import { renderHome } from './ui/home.js';
 import { renderFinance } from './ui/finance.js';
 import { renderTabbar } from './ui/tabbar.js';
-import { renderHelp } from './ui/help.js';
+import { renderProgress } from './ui/progress.js';
+import { resetRecovery } from './recovery.js';
 import { openTrilhas } from './ui/trilhas.js';
 import { forceMotion } from './motion.js';
+import { leaveScreens } from './ui/dom.js';
+import { initMusic } from './music.js';
+import { initSfx } from './sfx.js';
+import { registerWorker } from './settings.js';
 
 /** Kills the browser gestures that break a fullscreen game. */
 function lockGestures() {
@@ -59,13 +65,16 @@ function renderTrilhasTab(host) {
   });
 }
 
-const TABS = { pet: renderHome, trilhas: renderTrilhasTab, financas: renderFinance, ajuda: renderHelp };
+const TABS = {
+  pet: renderHome, trilhas: renderTrilhasTab, progresso: renderProgress, financas: renderFinance,
+};
 let tab = 'pet';
 let tabbar = null;
 
 /** Egg pick on first run; after that the pet and finance tabs, with the footer. */
 function route() {
   const host = screens();
+  leaveScreens();
   host.replaceChildren();
   tabbar?.remove();
   tabbar = null;
@@ -79,19 +88,32 @@ function route() {
   });
   host.after(tabbar);
   TABS[tab](host);
+
+  // First time on the home screen (right after the first egg hatched): the
+  // tour, once the screen has settled in.
+  if (tab === 'pet' && !isOnboarded()) setTimeout(() => startTour(), 700);
 }
 
 function boot() {
-  if (new URLSearchParams(location.search).has('reset')) resetSave();
+  if (new URLSearchParams(location.search).has('reset')) { resetSave(); resetRecovery(); }
   // ?motion: full effects even with the system's reduce motion on.
   if (forceMotion) document.documentElement.classList.add('motion-full');
   lockGestures();
+  initMusic();
+  initSfx();
+  registerWorker();
   initViewport();
   initDebugHud();
   // The info screen retired the pet for a new egg: back to the egg pick.
   document.addEventListener('pet:new-egg', () => { tab = 'pet'; route(); });
+  // A screen asks for another tab (Progresso links to Finanças).
+  document.addEventListener('app:tab', (e) => {
+    if (!TABS[e.detail] || e.detail === tab) return;
+    tab = e.detail;
+    route();
+  });
   route();
-  console.log('[pet-tigrinho] ready', getViewport());
+  if (new URLSearchParams(location.search).has('debug')) console.log('[pet-tigrinho] ready', getViewport());
 }
 
 if (document.readyState === 'loading') {

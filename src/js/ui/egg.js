@@ -4,6 +4,7 @@ import { chooseEgg } from '../state.js';
 import { h } from './dom.js';
 import { eggArt } from './art.js';
 import { reducedMotion } from '../motion.js';
+import { eggSfx } from '../sfx.js';
 
 /**
  * First-run egg pick: four 3D eggs spinning (see eggs3d.js). The first tap
@@ -79,7 +80,9 @@ export function renderEgg(host, onHatched) {
     if (hatching || !button) return;
     hatching = true;
     button.classList.add('egg--hatching');
+    eggSfx.shake();
     setTimeout(() => {
+      eggSfx.hatch();
       const box = button.getBoundingClientRect();
       const base = stage.getBoundingClientRect();
       button.style.visibility = 'hidden';

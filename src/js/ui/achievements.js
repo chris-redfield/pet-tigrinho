@@ -1,5 +1,5 @@
 import { ACTIONS, ACTION_ORDER, ICONS } from '../config.js';
-import { activity, medals, level, evolutions, petName } from '../state.js';
+import { activity, medals, level, evolutions } from '../state.js';
 import { h, num, plural } from './dom.js';
 import { iconArt, actionIcon } from './art.js';
 
@@ -15,16 +15,12 @@ import { iconArt, actionIcon } from './art.js';
  * A save made before the per-day history existed shows an empty week until
  * the next action is logged; the lifetime column is complete either way.
  *
- * @param {HTMLElement} host     element to mount into
- * @param {() => void}  onClose  called after the screen is dismissed
+ * The Conquistas tab of the profile.
+ *
+ * @returns {HTMLElement[]} the period switch and the tab's scrolling body
  */
-export function openAchievements(host, onClose) {
+export function renderAchievements() {
   let period = 'all';
-
-  const close = () => {
-    screen.remove();
-    onClose?.();
-  };
 
   const PERIODS = [
     { id: 'all', label: 'Sempre' },
@@ -110,15 +106,6 @@ export function openAchievements(host, onClose) {
           h('span', { class: 'medal__at', text: medal.done ? '✓' : `${num(medal.value)} / ${num(medal.goal)}` })))));
   }
 
-  const screen = h('div', { class: 'ach', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Conquistas' },
-    h('div', { class: 'info__bar' },
-      h('button', { class: 'info__back', type: 'button', 'aria-label': 'Voltar', onclick: close },
-        iconArt(ICONS.back, 'info__back-icon')),
-      h('div', { class: 'info__title', text: 'Conquistas' })),
-    h('p', { class: 'ach__sub', text: `Tudo o que você fez com ${petName()}.` }),
-    tabs,
-    body);
-
   refresh();
-  host.append(screen);
+  return [tabs, body];
 }

@@ -1,7 +1,7 @@
 import { ACTIONS } from '../config.js';
 import { logAction, remainingToday } from '../state.js';
 import { checkPhoto } from '../vision.js';
-import { h, num, plural } from './dom.js';
+import { h, num, plural, onLeave } from './dom.js';
 import { motionAvailable, startPedometer } from '../pedometer.js';
 
 /**
@@ -33,14 +33,20 @@ export function openSheet(host, type, onLogged) {
   let stopCounting = null;   // set while the step sensor is counting
   let counted = 0;           // steps the sensor has seen this session
 
+  let closed = false;
   const close = () => {
+    closed = true;
+    cancelLeave();
     checkSeq += 1;
     stopCounting?.();
+    stopCounting = null;
     if (photo) URL.revokeObjectURL(photo.url);
     scrim.remove();
     sheet.remove();
   };
 
+  // A tab change removes the sheet without Cancelar: still stop the sensor.
+  const cancelLeave = onLeave(close);
   const scrim = h('div', { class: 'scrim', onclick: close });
 
   const amount = h('div', { class: 'amount' });
@@ -140,6 +146,8 @@ export function openSheet(host, type, onLogged) {
           : 'Este aparelho não tem sensor de movimento. Digite os passos abaixo.');
       });
     counter.disabled = false;
+    // Closed while the permission prompt was up: switch the sensor off now.
+    if (closed) { stop(); return; }
     if (!failed) stopCounting = stop;
   }
 

@@ -277,6 +277,8 @@ export function createEggStage(host, eggs, { reduced, onPick }) {
         o.material?.dispose();
       });
       renderer.dispose();
+      // Hand the GPU memory back now, not whenever the browser gets to it.
+      renderer.forceContextLoss();
       renderer.domElement.remove();
     },
   };

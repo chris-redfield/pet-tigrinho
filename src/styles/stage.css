@@ -58,7 +58,8 @@ body[data-mode="framed"] #backdrop { opacity: 1; }
 /*
  * The floor pattern: a faint gold diamond lattice drifting diagonally, as
  * if a camera glides over a plane. The layer is one tile bigger than the
- * stage on every side and moves exactly one tile per loop, so the loop is
+ * stage on the two sides it slides in from (top and right: it moves left
+ * and down) and moves exactly one tile per loop, so the loop is
  * seamless. Low contrast on purpose - it should read as depth, never pull
  * the eye. Reduced motion (base.css) leaves it still.
  *
@@ -73,7 +74,8 @@ body[data-mode="framed"] #backdrop { opacity: 1; }
 .stage::before {
   content: "";
   position: absolute;
-  inset: calc(var(--tile) * -1);
+  /* Extra only where the slide needs it: a smaller GPU layer, same look. */
+  inset: calc(var(--tile) * -1) calc(var(--tile) * -1) 0 0;
   z-index: -1;
   pointer-events: none;
   opacity: .12;

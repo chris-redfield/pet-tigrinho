@@ -308,9 +308,9 @@ What is new in this evolution:
 ## 3. Ovo Azul — linhas Água e Gelo
 
 ### Tigre d'Água · `tigre-dagua` · Água · Comum 🎨
-O inicial de água: pelagem verde-azulada, ondas na cauda e gotas
-flutuando. Feito antes deste guia, a partir do Tigrin (*"make the fur of
-this latest image green"* → *"slightly pulled towards blue"*).
+O inicial de água: pelagem azul-turquesa com listras escuras e um lenço de
+cristais de água no pescoço. Sprite atual desenhado pelo time (substituiu a
+primeira versão, com ondas na cauda e gotas flutuando).
 
 ### Oceaniger · `oceaniger` · Água · Raro 🎨
 Anexos: `tigrin.png` + `tigre-dagua.png`

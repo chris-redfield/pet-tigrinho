@@ -126,6 +126,7 @@ export function renderInfo(screen, close) {
     const known = discovered().has(branch.form.id);
     const peek = h('div', { class: 'evo__peek' },
       h('img', { class: `evo__art${known ? '' : ' silhouette'}`, src: branch.form.art, alt: '',
+        srcset: `${branch.form.thumb} 360w, ${branch.form.art} 900w`, sizes: '32vw',
         loading: 'lazy', decoding: 'async' }),
       !known && h('span', { class: 'evo__mark', 'aria-hidden': 'true', text: '?' }));
 
@@ -207,7 +208,10 @@ export function renderInfo(screen, close) {
 
   return h('div', { class: 'info__body', dataset: { scroll: '' } },
     h('div', { class: 'info__hero' },
-      h('img', { class: 'info__art', src: form.art, alt: '' }),
+      // The small copy where it is sharp enough (the browser picks by the
+      // screen's pixel density), the full art on denser screens.
+      h('img', { class: 'info__art', src: form.art, alt: '', decoding: 'async',
+        srcset: `${form.thumb} 360w, ${form.art} 900w`, sizes: '38vw' }),
       h('div', { class: 'info__namerow' }, nameText, nameInput, editBtn)),
     progressPanel,
     statusPanel,

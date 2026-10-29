@@ -8,7 +8,7 @@ Turns source art into game sprites and wires them in.
 
 For every form in src/js/forms.js that has `assets/source/<id>.png`:
 crop to the alpha bounds, resize to 900px wide and save
-`assets/pet/<id>.webp`, plus a 288px wide thumbnail at
+`assets/pet/<id>.webp`, plus a 360px wide thumbnail at
 `assets/pet/thumb/<id>.webp` for the small pictures (Enciclopédia, the
 next-evolution peek), so those screens do not download the full art.
 
@@ -41,7 +41,7 @@ CONFIG = ROOT / 'src/js/config.js'
 MANIFEST = ROOT / 'src/js/sprites.js'
 
 WIDTH = 900
-THUMB_WIDTH = 288
+THUMB_WIDTH = 360
 THUMBS = PET / 'thumb'
 ICON_SIZE = 256
 KNOCKOUT_THRESHOLD = 40  # colour distance still counted as background

@@ -53,7 +53,7 @@ const list = [];
 function form(id, name, type, rarity, extra = {}) {
   const file = SPRITES.includes(id) ? id : FALLBACK;
   const art = `assets/pet/${file}.webp`;
-  const thumb = `assets/pet/thumb/${file}.webp`;   // 288px, for small pictures
+  const thumb = `assets/pet/thumb/${file}.webp`;   // 360px, for small pictures
   const parent = list.find((f) => f.id === extra.from);
   list.push({ id, name, type, rarity, art, thumb, scale: SCALE[rarity], from: null, aura: parent?.aura, ...extra });
 }
@@ -100,7 +100,7 @@ form('magmatigreo', 'Magmatígreo', 'Fogo/Pedra', 'lendario',
 // ---------- Ovo Azul: Água / Gelo ----------
 
 form('tigre-dagua', "Tigre d'Água", 'Água', 'comum',
-  { scale: 78, aura: '#5cc8ff', desc: 'Um Tigrinho brincalhão, com ondas na cauda e gotas flutuando ao redor.' });
+  { aura: '#5cc8ff', desc: 'Um Tigrinho brincalhão de pelo azul-turquesa, com um lenço de cristais de água no pescoço.' });
 
 form('oceaniger', 'Oceaniger', 'Água', 'raro',
   { from: 'tigre-dagua', needs: { happiness: 70 },

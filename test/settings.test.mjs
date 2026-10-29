@@ -15,7 +15,8 @@ const ok = (name, got, want) => {
   console.log((pass ? 'PASS' : `FAIL got ${JSON.stringify(got)} want ${JSON.stringify(want)}`).padEnd(36), name);
 };
 
-ok('defaults', S.getSettings(), { volume: 80, music: true, sfx: true, notifications: false, reminders: false, language: 'pt', haptics: true });
+ok('defaults', S.getSettings(), { volume: 80, music: true, sfx: true, notifications: false, reminders: false, language: 'pt', haptics: true,
+  reduceMotion: null, contrast: false, colorblind: false, mobility: false });
 S.setSetting('volume', 35);
 S.setSetting('haptics', false);
 ok('saved', JSON.parse(store.get('pet-tigrinho:settings')).volume, 35);

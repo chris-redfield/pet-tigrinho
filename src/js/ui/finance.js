@@ -2,6 +2,7 @@ import { ICONS } from '../config.js';
 import { h } from './dom.js';
 import { iconArt } from './art.js';
 import { offlineReply } from '../finance-offline.js';
+import { reducedMotion } from '../motion.js';
 
 /**
  * Finance tab: a chat with the Gemini agent (server.js -> /api/finance).
@@ -183,7 +184,8 @@ function typeOut(msg, log) {
   return new Promise((resolve) => {
     const start = performance.now();
     let shown = 0;
-    let skip = false;
+    // Reduce motion: the whole reply at once.
+    let skip = reducedMotion();
     msg.addEventListener('click', () => { skip = true; }, { once: true });
 
     const frame = (now) => {

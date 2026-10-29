@@ -112,6 +112,28 @@ button {
   color: var(--gold-500);
 }
 
+/* Acessibilidade (a11y.js puts these on <html>).
+   High contrast: dim text close to full ink (13:1 on cards), gold edges
+   bright enough to read as edges (5:1+), jade lifted the same way.
+   Colorblind: the jade scale turns blue, so done/now/good never has to be
+   told from red or gold by a red-green difference. Text on it stays 4.5:1+. */
+:root.high-contrast {
+  --c-ink-dim: #fbe6c8;
+  --gold-600: #e0a838;
+  --c-gold-dim: var(--gold-600);
+  --red-600: #b0353b;
+  --jade-500: #3fb08a;
+}
+:root.colorblind {
+  --jade-800: #12284a;
+  --jade-700: #1b4a8c;
+  --jade-500: #2f6fd0;
+  --jade-300: #7ab8ff;
+  --jade-200: #b8daff;
+  --jade-100: #e0eeff;
+}
+:root.colorblind.high-contrast { --jade-500: #4a8be6; }
+
 /* Keyboard focus is always visible (touch taps do not trigger it). */
 :focus-visible {
   outline: calc(var(--u) * .8) solid var(--gold-300);
@@ -119,10 +141,8 @@ button {
 }
 input, textarea { font-family: inherit; }
 
-@media (prefers-reduced-motion: reduce) {
-  :root:not(.motion-full) *, :root:not(.motion-full) *::before, :root:not(.motion-full) *::after {
-    animation-duration: .01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: .01ms !important;
-  }
+:root.reduce-motion *, :root.reduce-motion *::before, :root.reduce-motion *::after {
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: .01ms !important;
 }

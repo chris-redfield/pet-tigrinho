@@ -1,8 +1,8 @@
-import { ACTIONS, ICONS } from '../config.js';
+import { ICONS } from '../config.js';
 import { TRILHA_XP, TRILHA_COINS } from '../trilhas.js';
 import { trilhaPath, trilhaToday, completeTrilha, coins } from '../state.js';
 import { done as chime } from '../sfx.js';
-import { h, num, plural } from './dom.js';
+import { h, num, amount, amountNum, actionCfg } from './dom.js';
 import { iconArt, actionIcon, coinArt } from './art.js';
 import { openShop } from './shop.js';
 import { openSheet } from './sheet.js';
@@ -89,7 +89,7 @@ export function openTrilhas(host, { onChange, onClose } = {}) {
 
   /** "1 foto", "2.000 passos" - the target written the way the player reads it. */
   function taskText(task) {
-    return `${num(task.units)} ${plural(task.units, ACTIONS[task.type])}`;
+    return amount(task.type, task.units);
   }
 
   /**
@@ -129,9 +129,9 @@ export function openTrilhas(host, { onChange, onClose } = {}) {
         const text = h('div', { class: 'tday__text' },
           h('span', { class: 'tday__name', text: taskText(task) }),
           h('span', { class: 'tday__have', text: !live
-            ? (task.done ? 'Concluída' : ACTIONS[task.type].label)
+            ? (task.done ? 'Concluída' : actionCfg(task.type).label)
             : task.done ? 'Feito hoje'
-            : `${num(task.have)} de ${num(task.units)} hoje` }));
+            : `${amountNum(task.type, task.have)} de ${amountNum(task.type, task.units)} hoje` }));
 
         // Only the live day can be logged from here; the rest are a preview.
         return h('li', { class: 'tday__task', dataset: { done: String(task.done) } },

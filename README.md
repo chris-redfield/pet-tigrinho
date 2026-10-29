@@ -86,6 +86,12 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    | Estudo   | +80 XP / 30 min        | 180 min     | Sabedoria  |
    | Refeição | +40 XP / meal photo    | 4 meals     | Saciedade  |
 
+   **Cadeira de rodas**: with *Uso cadeira de rodas* on (Acessibilidade),
+   Passos becomes Cadeira de rodas everywhere (name, icon, sheet,
+   trilhas, medals), counted in minutes: +40 XP / 10 min, 150 min a day.
+   Minutes are saved as steps (1 min = 100), so the cap, trilhas and
+   medals stay one scale (`actionCfg` in `src/js/ui/dom.js`).
+
    **Photos and meals are checked by the AI** (`server/vision.js`, route
    `/api/vision`). The photo is shrunk in the browser, sent once to Gemini
    and dropped; the game keeps nothing. The answer must match a fixed JSON
@@ -201,7 +207,14 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
      evolution, Enciclopédia, new egg, replay the tour (`info.js`).
    - **Conquistas** — below.
    - **Configurações** (`src/js/settings.js`, its own key, this device
-     only): *Som* (volume and background music: one calm loop,
+     only) has two inner tabs. **Acessibilidade** (`src/js/a11y.js` puts
+     them on `<html>` as classes): *Alto contraste* (`high-contrast`:
+     dim text near full ink, bright gold edges), *Modo daltonismo*
+     (`colorblind`: the jade scale turns blue, so nothing hinges on red
+     vs green), *Reduzir movimento* (`reduce-motion`: starts from
+     the phone's own setting, then the switch decides; eggs fade in, XP fades instead of flying,
+     evolution is a plain fade, the finance chat shows replies whole)
+     and *Uso cadeira de rodas* (see Cadeira de rodas). **Geral**: *Som* (volume and background music: one calm loop,
      `assets/audio/forest.mp3`, "forest" by syncopika, credited under
      *Créditos*; `src/js/music.js` fetches and starts it on the first tap (only if it is on), as browsers
      require, fades it in and out and pauses it while the game is out of
@@ -391,7 +404,7 @@ Then <http://localhost:8000>. Query flags: `?debug=1` for a viewport HUD,
 `?reset=1` to wipe the save, `?dev=1` for a dev button on the home screen
 that grants exactly the XP to the next level (it feeds no status bar, so
 log real actions first to steer the Azul branch), `?motion` for the full
-effects on a machine with the system's reduce motion on (egg drop,
+effects even with reduce motion on (system or Acessibilidade) (egg drop,
 evolution charge, petting wiggle - see `src/js/motion.js`).
 
 ```sh

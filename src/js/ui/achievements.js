@@ -1,6 +1,6 @@
-import { ACTIONS, ACTION_ORDER, ICONS } from '../config.js';
+import { ACTION_ORDER, ICONS } from '../config.js';
 import { activity, medals, level, evolutions } from '../state.js';
-import { h, num, plural } from './dom.js';
+import { h, num, amount, amountNum, actionCfg } from './dom.js';
 import { iconArt, actionIcon } from './art.js';
 
 /**
@@ -73,17 +73,14 @@ export function renderAchievements() {
       h('h2', { class: 'ach__heading', text: 'Atividades' }),
       h('ul', { class: 'ach__list' },
         ACTION_ORDER.map((type) => {
-          const cfg = ACTIONS[type];
+          const cfg = actionCfg(type);
           const count = units[type] || 0;
           return h('li', { class: 'ach__row', dataset: { empty: String(count === 0) } },
             actionIcon(type, 'ach__icon'),
             h('div', { class: 'ach__row-text' },
               h('span', { class: 'ach__row-name', text: cfg.label }),
               h('span', { class: 'ach__row-rate', text: `+${cfg.xp} XP por ${cfg.rate}` })),
-            h('span', { class: 'ach__count' },
-              h('strong', { text: num(count) }),
-              ' ',
-              plural(count, cfg)));
+            h('span', { class: 'ach__count' }, ...countParts(type, count)));
         })));
   }
 
@@ -102,10 +99,25 @@ export function renderAchievements() {
             iconArt(medal.done ? ICONS.crown : ICONS.lock, 'medal__icon')),
           h('div', { class: 'medal__text' },
             h('span', { class: 'medal__name', text: medal.name }),
-            h('span', { class: 'medal__desc', text: medal.desc })),
-          h('span', { class: 'medal__at', text: medal.done ? '✓' : `${num(medal.value)} / ${num(medal.goal)}` })))));
+            h('span', { class: 'medal__desc', text: medalDesc(medal) })),
+          h('span', { class: 'medal__at', text: medal.done ? '✓' : medal.type
+            ? `${amountNum(medal.type, medal.value)} / ${amountNum(medal.type, medal.goal)}`
+            : `${num(medal.value)} / ${num(medal.goal)}` })))));
   }
 
   refresh();
   return [tabs, body];
+}
+
+/** "<strong>2.000</strong> passos" - the number bold, the unit plain. */
+function countParts(type, count) {
+  const [n, ...unit] = amount(type, count).split(' ');
+  return [h('strong', { text: n }), ` ${unit.join(' ')}`];
+}
+
+/** Step medals read in wheelchair minutes for players who use one. */
+function medalDesc(medal) {
+  return medal.type && actionCfg(medal.type).factor !== 1
+    ? `${amount(medal.type, medal.goal)} de cadeira de rodas.`
+    : medal.desc;
 }

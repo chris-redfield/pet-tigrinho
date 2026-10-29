@@ -1,7 +1,7 @@
 import { ACTIONS } from '../config.js';
 import { logAction, remainingToday } from '../state.js';
 import { checkPhoto, shrinkPhoto } from '../vision.js';
-import { h, num, plural, onLeave } from './dom.js';
+import { h, num, plural, onLeave, actionCfg } from './dom.js';
 import { motionAvailable, startPedometer } from '../pedometer.js';
 
 /**
@@ -17,6 +17,8 @@ import { motionAvailable, startPedometer } from '../pedometer.js';
  *   verify    - the AI checks the photo: 'meal' (is it food?) or 'photo'
  *               (what kind of place - each place has its own rate)
  *   sensor    - steps can be counted by the phone
+ *   wheelchair - Passos as Cadeira de rodas, in minutes (actionCfg).
+ *               Minutes are saved as steps, so they pay exactly the same.
  *
  * @param {HTMLElement} host    element to mount into
  * @param {string}      type    key in ACTIONS
@@ -24,9 +26,11 @@ import { motionAvailable, startPedometer } from '../pedometer.js';
  */
 export function openSheet(host, type, onLogged) {
   const cfg = ACTIONS[type];
+  // What the player sees and counts in; `cfg` keeps the saved units and XP.
+  const view = actionCfg(type);
   const left = remainingToday(type);
 
-  let units = cfg.step;
+  let units = view.step;
   let photo = null;          // { file, url } once the camera returns
   let check = null;          // AI check: { busy } | { result } | { error }
   let checkSeq = 0;          // ignores answers for a photo already replaced
@@ -53,9 +57,9 @@ export function openSheet(host, type, onLogged) {
   const gain = h('div', { class: 'sheet__gain' });
   const note = h('p', { class: 'sheet__note' });
   const minus = h('button', { class: 'step-btn', type: 'button', 'aria-label': 'menos',
-    onclick: () => bump(-cfg.step) }, '−');
+    onclick: () => bump(-view.step) }, '−');
   const plus = h('button', { class: 'step-btn', type: 'button', 'aria-label': 'mais',
-    onclick: () => bump(cfg.step) }, '+');
+    onclick: () => bump(view.step) }, '+');
   const confirm = h('button', { class: 'btn', type: 'button', onclick: commit });
 
   // ---------- photo + AI check ----------
@@ -91,7 +95,7 @@ export function openSheet(host, type, onLogged) {
    * is open, then used as the amount. Typing stays available for walks the
    * phone did not see. The count is plain text: no spin-up, no flourish.
    */
-  const sensorState = cfg.sensor ? motionAvailable() : 'unsupported';
+  const sensorState = view.sensor ? motionAvailable() : 'unsupported';
   const counter = sensorState !== 'unsupported'
     ? h('button', { class: 'btn btn--ghost sheet__sensor', type: 'button', text: 'Contar com o celular',
         onclick: toggleCounting })
@@ -101,7 +105,7 @@ export function openSheet(host, type, onLogged) {
   const stepper = cfg.capture ? null : h('div', { class: 'sheet__row' }, minus, amount, plus);
 
   const sheet = h('div', { class: 'sheet panel', role: 'dialog', 'aria-modal': 'true' },
-    h('h2', { class: 'sheet__title display', text: cfg.verb }),
+    h('h2', { class: 'sheet__title display', text: view.verb }),
     hint,
     rates,
     preview,
@@ -117,7 +121,7 @@ export function openSheet(host, type, onLogged) {
     file);
 
   function bump(delta) {
-    units = Math.max(cfg.step, Math.min(cfg.cap * 2, units + delta));
+    units = Math.max(view.step, Math.min(view.cap * 2, units + delta));
     render();
   }
 
@@ -222,8 +226,9 @@ export function openSheet(host, type, onLogged) {
     return cfg.verify === 'meal' && left > 0 && Boolean(check?.result) && !check.result.isFood;
   }
 
+  /** Saved units this entry would pay for. */
   function payable() {
-    return Math.min(units, left);
+    return Math.min(units * view.factor, left);
   }
 
   function renderVerdict() {
@@ -252,10 +257,13 @@ export function openSheet(host, type, onLogged) {
     const pays = payable();
     const xp = Math.round((pays / cfg.step) * rate());
 
+    // Today's room in the units on screen (minutes round down).
+    const room = Math.floor(left / view.factor);
+
     if (!cfg.capture) {
-      amount.replaceChildren(num(units), h('small', { text: plural(units, cfg) }));
-      minus.disabled = units <= cfg.step;
-      plus.disabled = units >= cfg.cap * 2;
+      amount.replaceChildren(num(units), h('small', { text: plural(units, view) }));
+      minus.disabled = units <= view.step;
+      plus.disabled = units >= view.cap * 2;
     }
 
     gain.textContent = `+${xp} XP`;
@@ -263,11 +271,11 @@ export function openSheet(host, type, onLogged) {
     if (left === 0) {
       note.textContent = 'Você já rendeu o máximo de hoje. Volta amanhã.';
       note.className = 'sheet__note sheet__note--warn';
-    } else if (units > left) {
-      note.textContent = `Acima de ${num(left)} ${plural(left, cfg)} não rende XP hoje.`;
+    } else if (units * view.factor > left) {
+      note.textContent = `Acima de ${num(room)} ${plural(room, view)} não rende XP hoje.`;
       note.className = 'sheet__note sheet__note--warn';
     } else {
-      note.textContent = `Restam ${num(left)} ${plural(left, cfg)} hoje.`;
+      note.textContent = `Restam ${num(room)} ${plural(room, view)} hoje.`;
       note.className = 'sheet__note';
     }
 
@@ -293,7 +301,7 @@ export function openSheet(host, type, onLogged) {
       file.click();
       return;
     }
-    const result = logAction(type, cfg.capture ? 1 : units, { place: place() });
+    const result = logAction(type, cfg.capture ? 1 : units * view.factor, { place: place() });
     close();
     onLogged(result);
   }

@@ -8,7 +8,7 @@ import { renderTabbar } from './ui/tabbar.js';
 import { renderProgress } from './ui/progress.js';
 import { resetRecovery } from './recovery.js';
 import { openTrilhas } from './ui/trilhas.js';
-import { forceMotion } from './motion.js';
+import { initA11y } from './a11y.js';
 import { leaveScreens } from './ui/dom.js';
 import { initMusic } from './music.js';
 import { initSfx } from './sfx.js';
@@ -96,8 +96,7 @@ function route() {
 
 function boot() {
   if (new URLSearchParams(location.search).has('reset')) { resetSave(); resetRecovery(); }
-  // ?motion: full effects even with the system's reduce motion on.
-  if (forceMotion) document.documentElement.classList.add('motion-full');
+  initA11y();
   lockGestures();
   initMusic();
   initSfx();

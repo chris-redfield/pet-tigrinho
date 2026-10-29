@@ -24,9 +24,12 @@ function whenDone(node, ms, fn = () => node.remove()) {
   setTimeout(finish, ms);
 }
 
-/** Restarts a one-shot CSS animation class on `node`. */
+/** The pet's one-shot reactions. Their CSS rules tie, so a leftover one would win over the next. */
+const ONE_SHOT = ['pet-stage--pet', 'pet-stage--hop'];
+
+/** Restarts a one-shot CSS animation class on `node`, clearing the other reactions first. */
 function replay(node, cls) {
-  node.classList.remove(cls);
+  node.classList.remove(...ONE_SHOT, cls);
   void node.offsetWidth;   // force a reflow so the animation starts over
   node.classList.add(cls);
 }

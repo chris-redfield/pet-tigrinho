@@ -47,7 +47,7 @@ export const ACTIONS = {
     label: 'Foto', verb: 'Tirar uma foto',
     rate: 'foto',
     unit: 'foto', unitPlural: 'fotos',
-    xp: 10, step: 1, cap: 5,
+    xp: 40, step: 1, cap: 5,
     capture: true,
     // The AI names where the photo was taken; each place pays a fixed,
     // published amount (listed in the sheet before the photo is taken), so
@@ -55,40 +55,63 @@ export const ACTIONS = {
     // `xp` above is what a photo pays when the AI cannot be reached.
     verify: 'photo',
     places: {
-      natureza: { label: 'Natureza',       emoji: '🌳', xp: 20 },
-      passeio:  { label: 'Lugar visitado', emoji: '📍', xp: 20 },
-      trabalho: { label: 'Trabalho',       emoji: '💼', xp: 15 },
-      casa:     { label: 'Casa',           emoji: '🏠', xp: 10 },
-      outro:    { label: 'Outro',          emoji: '📷', xp: 10 },
+      natureza: { label: 'Natureza',       emoji: '🌳', xp: 80 },
+      passeio:  { label: 'Lugar visitado', emoji: '📍', xp: 80 },
+      trabalho: { label: 'Trabalho',       emoji: '💼', xp: 60 },
+      casa:     { label: 'Casa',           emoji: '🏠', xp: 40 },
+      outro:    { label: 'Outro',          emoji: '📷', xp: 40 },
     },
+    // Shown instead of an error when the AI cannot be reached; the photo
+    // still pays the base `xp`. Only the words vary, never the payout.
+    praise: [
+      'Bom trabalho!',
+      'Que foto bacana!',
+      'Ficou ótima!',
+      'Adorei esse momento!',
+      'Mandou bem!',
+      'Que registro legal!',
+      'Foto guardada com carinho!',
+      'Seu bichinho amou essa!',
+    ],
   },
   steps: {
     label: 'Passos', verb: 'Registrar passos',
     rate: '1.000',
     unit: 'passo', unitPlural: 'passos',
-    xp: 10, step: 1000, cap: 15000,
+    xp: 40, step: 1000, cap: 15000,
     sensor: true,
   },
   book: {
     label: 'Leitura', verb: 'Registrar leitura',
     rate: '10 pág',
     unit: 'página', unitPlural: 'páginas',
-    xp: 15, step: 10, cap: 100,
+    xp: 60, step: 10, cap: 100,
   },
   course: {
-    label: 'Estudo', verb: 'Registrar Horários de Estudo',
+    label: 'Estudo', verb: 'Registrar estudo',
     rate: '30 min',
     unit: 'minuto', unitPlural: 'minutos',
-    xp: 20, step: 30, cap: 180,
-    schedule: true,   // logged as a start and end time
+    xp: 80, step: 30, cap: 180,
   },
   meal: {
     label: 'Refeição', verb: 'Foto da refeição',
     rate: 'refeição',
     unit: 'refeição', unitPlural: 'refeições',
-    xp: 10, step: 1, cap: 4,
+    xp: 40, step: 1, cap: 4,
     capture: true,
-    verify: 'meal',   // pays only if the AI sees food in the photo
+    // Pays only if the AI sees food in the photo. If the AI cannot be
+    // reached the meal still pays the base `xp`, under one of these.
+    verify: 'meal',
+    praise: [
+      'Que prato caprichado!',
+      'Isso parece delicioso!',
+      'Refeição de respeito!',
+      'Comer bem é se cuidar. Mandou bem!',
+      'Que cor bonita nesse prato!',
+      'Bom apetite!',
+      'Energia renovada!',
+      'Seu bichinho ficou com água na boca!',
+    ],
   },
 };
 
@@ -110,8 +133,8 @@ export const RARITIES = {
  *
  * Going from level L to L+1 costs L * LEVEL_STEP XP, so level L starts at
  * LEVEL_STEP * L(L-1)/2. With 6: Nv 16 (first evolution) at 720 XP and
- * Nv 36 (second) at 3.780 XP. A normal ~150 XP day puts those about five
- * days and three and a half weeks in. Fixed and published like everything
+ * Nv 36 (second) at 3.780 XP. A normal ~600 XP day puts those on day two
+ * and about a week in. Fixed and published like everything
  * else.
  */
 export const LEVEL_STEP = 6;

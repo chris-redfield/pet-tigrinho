@@ -16,7 +16,6 @@ import { motionAvailable, startPedometer } from '../pedometer.js';
  *   capture   - a photo instead of a stepper
  *   verify    - the AI checks the photo: 'meal' (is it food?) or 'photo'
  *               (what kind of place - each place has its own rate)
- *   schedule  - a start and end time instead of a stepper
  *   sensor    - steps can be counted by the phone
  *
  * @param {HTMLElement} host    element to mount into
@@ -79,37 +78,6 @@ export function openSheet(host, type, onLogged) {
     ? h('p', { class: 'sheet__privacy', text: 'A foto é analisada pela IA e não fica guardada.' })
     : null;
 
-  // ---------- study schedule ----------
-
-  const pad = (n) => String(n).padStart(2, '0');
-  const clock = (d) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  const now = new Date();
-  now.setMinutes(Math.floor(now.getMinutes() / 5) * 5, 0, 0);
-  const startInput = cfg.schedule
-    ? h('input', { class: 'time__input', type: 'time', value: clock(new Date(now - 30 * 60_000)),
-        'aria-label': 'Início', oninput: render })
-    : null;
-  const endInput = cfg.schedule
-    ? h('input', { class: 'time__input', type: 'time', value: clock(now),
-        'aria-label': 'Fim', oninput: render })
-    : null;
-  const schedule = cfg.schedule
-    ? h('div', { class: 'time' },
-        h('label', { class: 'time__field' }, h('span', { text: 'Início' }), startInput),
-        h('span', { class: 'time__dash', 'aria-hidden': 'true', text: '→' }),
-        h('label', { class: 'time__field' }, h('span', { text: 'Fim' }), endInput))
-    : null;
-
-  /** Minutes between the two times; past midnight wraps (23:30 → 00:15 is 45). */
-  function scheduledMinutes() {
-    const [sh, sm] = startInput.value.split(':').map(Number);
-    const [eh, em] = endInput.value.split(':').map(Number);
-    if ([sh, sm, eh, em].some(Number.isNaN)) return 0;
-    let diff = (eh * 60 + em) - (sh * 60 + sm);
-    if (diff <= 0) diff += 24 * 60;
-    return diff;
-  }
-
   // ---------- steps sensor ----------
 
   /**
@@ -124,7 +92,7 @@ export function openSheet(host, type, onLogged) {
     : null;
   const counterNote = counter ? h('p', { class: 'sheet__note', hidden: true, role: 'status' }) : null;
 
-  const stepper = cfg.capture || cfg.schedule ? null : h('div', { class: 'sheet__row' }, minus, amount, plus);
+  const stepper = cfg.capture ? null : h('div', { class: 'sheet__row' }, minus, amount, plus);
 
   const sheet = h('div', { class: 'sheet panel', role: 'dialog', 'aria-modal': 'true' },
     h('h2', { class: 'sheet__title display', text: cfg.verb }),
@@ -132,8 +100,6 @@ export function openSheet(host, type, onLogged) {
     rates,
     preview,
     verdict,
-    schedule,
-    cfg.schedule ? amount : null,
     counter,
     counterNote,
     stepper,
@@ -217,7 +183,10 @@ export function openSheet(host, type, onLogged) {
       const result = await checkPhoto(cfg.verify, photo.file);
       if (seq === checkSeq) check = { result };
     } catch (err) {
-      if (seq === checkSeq) check = { error: err.message };
+      // No AI: the photo or meal pays the base rate under a friendly word, never an error.
+      if (seq === checkSeq) check = cfg.praise
+        ? { praise: cfg.praise[Math.floor(Math.random() * cfg.praise.length)] }
+        : { error: err.message };
     }
     if (seq === checkSeq) render();
   }
@@ -232,9 +201,12 @@ export function openSheet(host, type, onLogged) {
     return place() ? cfg.places[place()].xp : cfg.xp;
   }
 
-  /** A meal pays only once the AI has seen food in it. */
+  /**
+   * A meal is held back only when the AI answered and saw no food. While it
+   * thinks, nothing can be saved; if it cannot be reached, the meal pays.
+   */
   function mealBlocked() {
-    return cfg.verify === 'meal' && left > 0 && !check?.result?.isFood;
+    return cfg.verify === 'meal' && left > 0 && Boolean(check?.result) && !check.result.isFood;
   }
 
   function payable() {
@@ -248,10 +220,10 @@ export function openSheet(host, type, onLogged) {
     verdict.dataset.state = check.busy ? 'busy' : check.error ? 'error' : 'done';
     if (check.busy) {
       verdict.textContent = 'Analisando a foto…';
+    } else if (check.praise) {
+      verdict.textContent = `${cfg.verify === 'meal' ? '🍽️' : '📷'} ${check.praise}`;
     } else if (check.error) {
-      verdict.textContent = cfg.verify === 'meal'
-        ? `${check.error}`
-        : `${check.error} A foto vale +${cfg.xp} XP.`;
+      verdict.textContent = check.error;
     } else if (cfg.verify === 'meal') {
       verdict.dataset.state = check.result.isFood ? 'done' : 'no';
       verdict.textContent = check.result.isFood
@@ -264,13 +236,10 @@ export function openSheet(host, type, onLogged) {
   }
 
   function render() {
-    if (cfg.schedule) units = scheduledMinutes();
     const pays = payable();
     const xp = Math.round((pays / cfg.step) * rate());
 
-    if (cfg.schedule) {
-      amount.replaceChildren(num(units), h('small', { text: 'min' }));
-    } else if (!cfg.capture) {
+    if (!cfg.capture) {
       amount.replaceChildren(num(units), h('small', { text: plural(units, cfg) }));
       minus.disabled = units <= cfg.step;
       plus.disabled = units >= cfg.cap * 2;
@@ -297,11 +266,8 @@ export function openSheet(host, type, onLogged) {
       confirm.disabled = busy;
       if (!photo) confirm.textContent = 'Abrir câmera';
       else if (busy) confirm.textContent = 'Analisando…';
-      else if (mealBlocked()) confirm.textContent = check?.error ? 'Tentar de novo' : 'Tirar outra foto';
+      else if (mealBlocked()) confirm.textContent = 'Tirar outra foto';
       else confirm.textContent = `Guardar  ·  +${xp} XP`;
-    } else if (cfg.schedule) {
-      confirm.textContent = `Registrar  ·  +${xp} XP`;
-      confirm.disabled = units <= 0 || units > 12 * 60;
     } else {
       confirm.textContent = `Registrar  ·  +${xp} XP`;
       confirm.disabled = units <= 0;
@@ -311,13 +277,10 @@ export function openSheet(host, type, onLogged) {
   function commit() {
     if (cfg.capture && !photo) { file.click(); return; }
     if (mealBlocked()) {
-      if (check?.error) runCheck(); else file.click();
+      file.click();
       return;
     }
-    const details = cfg.schedule
-      ? { from: startInput.value, to: endInput.value }
-      : { place: place() };
-    const result = logAction(type, cfg.capture ? 1 : units, details);
+    const result = logAction(type, cfg.capture ? 1 : units, { place: place() });
     close();
     onLogged(result);
   }

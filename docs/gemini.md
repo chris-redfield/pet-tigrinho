@@ -134,7 +134,9 @@ que apareça.
 ## Publicando o protótipo para teste
 
 O GitHub Pages só hospeda arquivos estáticos e **não roda o `server.js`**.
-Lá o jogo funciona, mas a aba Finanças mostra "Sem conexão com o servidor".
+Lá o jogo funciona sem a IA: a aba Finanças responde com respostas fixas
+por faixa de valor (`src/js/finance-offline.js`), e fotos e refeições pagam
+o XP base. Nenhum erro de IA aparece para o jogador.
 Para a IA funcionar, o `server.js` precisa rodar em algum lugar. Há dois
 caminhos:
 
@@ -213,11 +215,16 @@ Em qualquer opção, a chave fica no servidor, nunca no front-end.
 
 ## Problemas comuns
 
-| Mensagem no chat | Causa provável | O que fazer |
+O chat não mostra erros: se a IA falhar ou demorar mais de 10 s, o Tigrin
+responde com uma resposta fixa (sempre a mesma para a mesma faixa de valor,
+sem taxas). Se as respostas parecem sempre iguais, a IA não está
+respondendo; a causa aparece no terminal do `server.js`:
+
+| No terminal / na aba Network | Causa provável | O que fazer |
 |---|---|---|
-| "A IA ainda não foi configurada" | `.env` sem `GEMINI_API_KEY` | Refaça o passo 2 e reinicie o servidor |
-| "Sem conexão com o servidor" | Abriu com `python -m http.server` ou GitHub Pages | Rode `node server.js` |
-| "A IA não respondeu agora" | Chave inválida ou modelo inexistente | Veja o erro `[gemini]` no terminal |
-| "A IA está sobrecarregada agora" / "demorou demais" | Todos os modelos da lista falharam (demanda alta no Google) | Tente de novo em alguns minutos ou ponha outros modelos em `GEMINI_FALLBACK_MODELS` |
-| "Muitas perguntas seguidas" | Limite de 15 por minuto por pessoa | Espere um minuto. Se acontecer com todos ao mesmo tempo no servidor publicado, falta `TRUST_PROXY=1` |
+| `sem GEMINI_API_KEY` ao iniciar | `.env` sem `GEMINI_API_KEY` | Refaça o passo 2 e reinicie o servidor |
+| `api/finance` responde 404 ou 405 | Abriu com `python -m http.server` ou GitHub Pages | Rode `node server.js` |
+| Erro `[gemini]` | Chave inválida ou modelo inexistente | Confira a chave e `GEMINI_MODEL` |
+| Todos os modelos falharam / timeout | Demanda alta no Google | Tente de novo em alguns minutos ou ponha outros modelos em `GEMINI_FALLBACK_MODELS` |
+| `api/finance` responde 429 | Limite de 15 por minuto por pessoa | Espere um minuto. Se acontecer com todos ao mesmo tempo no servidor publicado, falta `TRUST_PROXY=1` |
 | "O chat atingiu o limite de hoje" | Passou do `DAILY_LIMIT` | Aumente o valor ou espere o dia virar (meia-noite UTC) |

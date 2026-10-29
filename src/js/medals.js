@@ -33,6 +33,6 @@ export const MEDALS = [
   { id: 'trilha-30', kind: 'trilhas', goal: 30,     name: 'Trinta trilhas',  desc: 'Concluir 30 trilhas.' },
   { id: 'lv-16',     kind: 'level',   goal: 16,     name: 'Primeira evolução', desc: 'Chegar ao Nv. 16.' },
   { id: 'lv-36',     kind: 'level',   goal: 36,     name: 'Forma final',     desc: 'Chegar ao Nv. 36.' },
-  { id: 'xp-1000',   kind: 'xp',      goal: 1000,   name: 'Mil de XP',       desc: '1.000 XP acumulados.' },
-  { id: 'xp-5000',   kind: 'xp',      goal: 5000,   name: 'Cinco mil de XP', desc: '5.000 XP acumulados.' },
+  { id: 'xp-1000',   kind: 'xp',      goal: 4000,   name: 'Quatro mil de XP', desc: '4.000 XP acumulados.' },
+  { id: 'xp-5000',   kind: 'xp',      goal: 20000,  name: 'Vinte mil de XP', desc: '20.000 XP acumulados.' },
 ];

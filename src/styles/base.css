@@ -93,6 +93,8 @@ body {
 }
 
 img, svg { display: block; max-width: 100%; }
+/* `hidden` must win over any class that sets display (the empty photo box). */
+[hidden] { display: none !important; }
 
 button {
   font: inherit;

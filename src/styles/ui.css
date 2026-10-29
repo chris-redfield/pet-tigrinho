@@ -393,6 +393,10 @@
   padding-bottom: calc(var(--u) * 5 + env(safe-area-inset-bottom));
   border-radius: var(--r-lg) var(--r-lg) 0 0;
   border-bottom: 0;
+  /* Never taller than the screen: what does not fit scrolls inside it. */
+  max-height: 92%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   animation: sheet-up .3s var(--ease) both;
 }
 @keyframes sheet-up { from { transform: translateY(100%); } }
@@ -479,20 +483,22 @@
   margin: 0 0 calc(var(--u) * 3);
   padding: 0;
   display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: calc(var(--u) * 1.4);
 }
-.rates[hidden] { display: none; }
 .rates__item {
   display: flex;
   align-items: center;
-  gap: calc(var(--u) * 2.4);
-  padding: calc(var(--u) * 1.6) calc(var(--u) * 3);
+  gap: calc(var(--u) * 1.6);
+  min-width: 0;
+  padding: calc(var(--u) * 1.4) calc(var(--u) * 2.2);
   border-radius: var(--r-sm);
   background: #2a06094d;
-  font-size: calc(var(--u) * 3.2);
+  font-size: calc(var(--u) * 2.9);
 }
-.rates__emoji { font-size: calc(var(--u) * 4); }
-.rates__label { flex: 1 1 auto; font-weight: 700; }
+.rates__item:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.rates__emoji { font-size: calc(var(--u) * 3.6); }
+.rates__label { flex: 1 1 auto; min-width: 0; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rates__xp { font-weight: 800; color: var(--c-gold); font-variant-numeric: tabular-nums; }
 .rates__xp::after { content: " XP"; font-size: .8em; }
 
@@ -513,38 +519,6 @@
 .verdict[data-state="no"],
 .verdict[data-state="error"] { border-color: #ffb37a99; color: #ffb37a; }
 @keyframes verdict-wait { 50% { opacity: .55; } }
-
-/* Study schedule: start and end time. */
-.time {
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  gap: calc(var(--u) * 3);
-  margin-bottom: calc(var(--u) * 3);
-}
-.time__field {
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--u) * 1);
-  font-size: calc(var(--u) * 2.8);
-  font-weight: 700;
-  color: var(--c-ink-dim);
-}
-.time__input {
-  width: calc(var(--u) * 30);
-  padding: calc(var(--u) * 2) calc(var(--u) * 2.4);
-  border-radius: var(--r-sm);
-  border: var(--edge) solid var(--c-gold-dim);
-  background: var(--red-900);
-  color: var(--c-ink);
-  font: inherit;
-  font-size: calc(var(--u) * 5);
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  color-scheme: dark;
-}
-.time__dash { padding-bottom: calc(var(--u) * 2.6); font-size: calc(var(--u) * 5); color: var(--c-gold); }
-.time + .amount { margin-bottom: calc(var(--u) * 2); }
 
 /* ---------- evolution ---------- */
 
@@ -1642,14 +1616,15 @@ button.tday__row:active { background: var(--red-800); }
 /* A tap squashes the pet a touch; an action that pays makes it hop. These
    use `scale` / `translate`, so they stack on top of the idle float. */
 /* Petting: the pet sinks under the hand, leans into it (toward the tap,
-   --lean from JS), wiggles happily and glows warm for a moment. */
+   --lean from JS), wiggles happily and glows warm for a moment. The squash
+   is 30% under the first take (1.12 / .86), which read as too much. */
 .pet-art { transform-origin: 50% 85%; }
 .pet-stage--pet .pet-art { animation: float var(--float-time) ease-in-out infinite, pet-pat .9s var(--ease), pet-glow 1s ease-out; }
 @keyframes pet-pat {
   0%   { scale: 1; rotate: 0deg; }
-  14%  { scale: 1.12 .86; rotate: 0deg; }
-  30%  { scale: .96 1.06; rotate: var(--lean, 4deg); }
-  48%  { scale: 1.03 .98; rotate: calc(var(--lean, 4deg) * -.7); }
+  14%  { scale: 1.084 .902; rotate: 0deg; }
+  30%  { scale: .972 1.042; rotate: var(--lean, 4deg); }
+  48%  { scale: 1.021 .986; rotate: calc(var(--lean, 4deg) * -.7); }
   66%  { scale: 1; rotate: calc(var(--lean, 4deg) * .45); }
   84%  { rotate: calc(var(--lean, 4deg) * -.2); }
   100% { scale: 1; rotate: 0deg; }
@@ -1676,9 +1651,10 @@ button.tday__row:active { background: var(--red-800); }
   animation: heart-up 1.8s cubic-bezier(.2, .7, .3, 1) both;
   filter: drop-shadow(0 calc(var(--u) * .6) 0 #5a0a0a66);
 }
-.heart--s { --heart: calc(var(--u) * 9); }
-.heart--m { --heart: calc(var(--u) * 13); }
-.heart--l { --heart: calc(var(--u) * 18); }
+/* 20% under the first sizes (9 / 13 / 18), which read too big. */
+.heart--s { --heart: calc(var(--u) * 7.2); }
+.heart--m { --heart: calc(var(--u) * 10.4); }
+.heart--l { --heart: calc(var(--u) * 14.4); }
 /* Hearts start above the tap point, so the finger never hides them. */
 @keyframes heart-up {
   0%   { opacity: 0; transform: translate(-50%, -120%) scale(.3); }
@@ -1802,7 +1778,7 @@ button.tday__row:active { background: var(--red-800); }
   100% { opacity: 0; transform: translate(-50%, calc(var(--u) * -16)); }
 }
 @keyframes soft-out { to { opacity: 0; } }
-@keyframes pet-pat-soft { 20% { scale: 1.05 .95; } }
+@keyframes pet-pat-soft { 20% { scale: 1.035 .965; } }
 @keyframes bar-glow {
   30% { box-shadow: 0 0 calc(var(--u) * 5) calc(var(--u) * 1.2) #f5c242cc; }
 }

@@ -376,10 +376,9 @@ export function remainingToday(type) {
  * and the home screen evolves it automatically (see `evolve`).
  *
  * A photo can name its `place` (from the AI check): each place has its own
- * fixed rate in `ACTIONS.photo.places`. A study session can carry its
- * `from`/`to` times, kept on the log.
+ * fixed rate in `ACTIONS.photo.places`.
  *
- * @param {{place?: string, from?: string, to?: string}} [details]
+ * @param {{place?: string}} [details]
  * @returns {{gained:number, paidUnits:number, cappedUnits:number, ready:boolean}}
  */
 export function logAction(type, units, details = {}) {
@@ -403,7 +402,6 @@ export function logAction(type, units, details = {}) {
 
   const entry = { type, units, gained, at: new Date().toISOString() };
   if (place) entry.place = place;
-  if (details.from && details.to) Object.assign(entry, { from: details.from, to: details.to });
   state.log.unshift(entry);
   state.log.length = Math.min(state.log.length, 100);
 

@@ -15,7 +15,7 @@
  */
 
 /** Flat, published bonus for finishing a day's trilha. */
-export const TRILHA_XP = 25;
+export const TRILHA_XP = 100;
 
 /**
  * The days, in order. `tasks` are action ids and the units the day asks

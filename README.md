@@ -69,11 +69,11 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
 
    | Action   | Rate                   | Daily cap   | Feeds      |
    |----------|------------------------|-------------|------------|
-   | Foto     | +10 to +20 XP / photo  | 5 photos    | Felicidade |
-   | Passos   | +10 XP / 1.000         | 15.000      | Saúde      |
-   | Leitura  | +15 XP / 10 pages      | 100 pages   | Sabedoria  |
-   | Estudo   | +20 XP / 30 min        | 180 min     | Sabedoria  |
-   | Refeição | +10 XP / meal photo    | 4 meals     | Saciedade  |
+   | Foto     | +40 to +80 XP / photo  | 5 photos    | Felicidade |
+   | Passos   | +40 XP / 1.000         | 15.000      | Saúde      |
+   | Leitura  | +60 XP / 10 pages      | 100 pages   | Sabedoria  |
+   | Estudo   | +80 XP / 30 min        | 180 min     | Sabedoria  |
+   | Refeição | +40 XP / meal photo    | 4 meals     | Saciedade  |
 
    **Photos and meals are checked by the AI** (`server/vision.js`, route
    `/api/vision`). The photo is shrunk in the browser, sent once to Gemini
@@ -81,20 +81,21 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    schema or it pays nothing.
    - *Refeição* is a photo of the plate: it pays only when the AI sees real
      food (not a drawing, a screen or a closed package). If the AI cannot be
-     reached, the meal pays the base +10 under a short compliment
+     reached, the meal pays the base +40 under a short compliment
      (`ACTIONS.meal.praise`), never an error.
    - *Foto* pays by where it was taken, from a published table shown in
-     the sheet before the photo: Natureza or Lugar visitado +20, Trabalho
-     +15, Casa or Outro +10 (`ACTIONS.photo.places`). Drawings, screenshots
+     the sheet before the photo: Natureza or Lugar visitado +80, Trabalho
+     +60, Casa or Outro +40 (`ACTIONS.photo.places`). Drawings, screenshots
      and photos of screens count as Outro. If the AI cannot be reached, the
-     photo pays the base +10 under a short word of praise
+     photo pays the base +40 under a short word of praise
      (`ACTIONS.photo.praise`), never an error. Same photo, same answer as far as the model
      allows (temperature 0); it is a rate table, not a draw.
 
 3. **Level** — going from Nv L to L+1 costs `L × LEVEL_STEP` (6) XP, so
-   Nv 16 is at 720 XP and Nv 36 at 3.780. A normal day lands near 150 XP
-   and a maxed one ~560, so the first evolution is about five days in and
-   the second about three and a half weeks.
+   Nv 16 is at 720 XP and Nv 36 at 3.780. A normal day lands near 600 XP
+   and a maxed one ~2.200, so the first evolution comes on day two and the
+   second in about a week. (The XP rates were raised 4× on 2026-10-28 so
+   the first evolution comes quickly; levels were left as they were.)
 4. **Evolve** — five lines of three forms, Pokémon style, at Nv 16 and
    Nv 36. The tree (14 forms) is data in `src/js/forms.js`:
 
@@ -179,7 +180,7 @@ reveal is a calm Pokémon-style bloom for exactly this reason.
    day, on a Duolingo-shaped path: *Dia 1*, *Dia 2*, … Each day asks for a
    few of the same five actions and carries one small thing worth knowing.
    The tasks tick themselves off from what was logged today — here or on
-   the home screen — and finishing pays a flat `TRILHA_XP` (25) printed on
+   the home screen — and finishing pays a flat `TRILHA_XP` (100) printed on
    the card before the player commits. One per calendar day: finish today's
    and the next opens tomorrow. What is *not* borrowed from Duolingo is the
    streak — a skipped day loses nothing, the trilha is simply still there.
